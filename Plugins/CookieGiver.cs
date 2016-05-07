@@ -121,7 +121,7 @@ namespace CitiBot.Plugins
                     break;
 
             }
-            m_previousSend = DateTime.Now.AddMilliseconds(1000); // Hardcoded limitation
+            m_previousSend = DateTime.Now.AddMilliseconds(200); // Hardcoded limitation
         }
 
 
@@ -449,26 +449,24 @@ namespace CitiBot.Plugins
             int bribe_amount = -1;
             if (split.Length < 2 || !int.TryParse(split[1], out bribe_amount) || bribe_amount <= 0)
             {
-                client.SendMessage("Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
                 return;
             }
             if (!m_user_database.ContainsKey(key))
             {
-                client.SendMessage("Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
             if (bribe_amount > m_user_database[key].CookieReceived)
             {
-                client.SendMessage("Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
+                return;
             }
             if (m_user_database[key].LastYoshiBribe.AddMinutes(10) > DateTime.Now)
             {
-                client.SendMessage("Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
+                return;
             }
-            var briber = m_user_database[key];
-            briber.CookieReceived -= bribe_amount;
-            m_user_database[key] = briber;
-
             int quantity = 0;
             quantity = m_random.Next(1, 3 * bribe_amount);
 
@@ -476,17 +474,37 @@ namespace CitiBot.Plugins
             int index = m_random.Next(0, users.Count());
             string targetkey = users[index];
 
-            var target = m_user_database[targetkey];
-            target.CookieReceived -= quantity;
-            if (target.CookieReceived < 0)
-                target.CookieReceived = 0;
-            m_user_database[targetkey] = target;
 
-            client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! He now has {3} cookies left",
-                message.SenderDisplayName,
-                quantity,
-                target.Username,
-                target.CookieReceived);
+            var briber = m_user_database[key];
+            var target = m_user_database[targetkey];
+            if (target.CookieReceived == 0)
+            {
+                briber.CookieReceived -= (bribe_amount / 2);
+                client.SendMessage(message.Channel, "{0} bribed Yoshi, who wanted to devour {1}'s cookies of {2}, but he had none left :'( Yoshi only ate half of the bribe",
+                    message.SenderDisplayName,
+                    target.Username,
+                    target.CookieReceived);
+            }
+            else
+            {
+                briber.CookieReceived -= bribe_amount;
+
+                target.CookieReceived -= quantity;
+                if (target.CookieReceived < 0)
+                    target.CookieReceived = 0;
+
+                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! He now has {3} cookies left",
+                    message.SenderDisplayName,
+                    quantity,
+                    target.Username,
+                    target.CookieReceived);
+
+            }
+
+            briber.LastYoshiBribe = DateTime.Now;
+
+            m_user_database[targetkey] = target;
+            m_user_database[key] = briber;
 
             Save();
         }
