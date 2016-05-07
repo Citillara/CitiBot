@@ -61,7 +61,7 @@ namespace CitiBot.Plugins
                     break;
                 case "!addcookie":
                 case "!newcookie":
-                    AddCokkie(client, message);
+                    AddCookieFlavor(client, message);
                     break;
                 case "!rehash":
                     Rehash(client, message);
@@ -81,8 +81,13 @@ namespace CitiBot.Plugins
             client.SendMessage(message.Channel, "Database contains {0} cookies", m_list_of_cookies.Count());
         }
 
-        private void AddCokkie(TwitchClient client, TwitchMessage message)
+        private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
         {
+            if (message.IsWhisper)
+            {
+                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                return;
+            }
             if (message.UserType >= TwitchUserTypes.Mod)
             {
                 string msg = message.Message.Replace("\"", "");
@@ -259,7 +264,7 @@ namespace CitiBot.Plugins
             if (split.Length > 2)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel>
-                if (message.UserType >= TwitchUserTypes.Citillara && split[2].StartsWith("#"))
+                if (message.UserType >= TwitchUserTypes.BotMaster && split[2].StartsWith("#"))
                 {
                     channel = split[2];
                     allowedThroughWhisper = true;
@@ -267,7 +272,7 @@ namespace CitiBot.Plugins
             }
             if (split.Length > 3)
             {
-                // Sends the cookies on another channel. Usage : !cookie <target> <channel> <amount>>
+                // Sends the cookies on another channel. Usage : !cookie <target> <channel> <amount>
                 if (message.UserType >= TwitchUserTypes.Citillara)
                 {
                     int.TryParse(split[3], out forcedCookies);
