@@ -35,6 +35,7 @@ namespace CitiBot
             client.OnMessage += client_OnMessage;
             client.OnPerform += client_OnPerform;
             client.OnPart += client_OnPart;
+            client.AutoDetectSendWhispers = true;
             client.Connect();
 
             while (true)
@@ -94,35 +95,13 @@ namespace CitiBot
             sender.Join("#angerbeard");*/
         }
 
-        DateTime nextAllowed = DateTime.Now;
 
-        void client_OnMessage(TwitchClient sender, TwitchClientOnMessageEventArgs args)
+        void client_OnMessage(TwitchClient sender, TwitchMessage message)
         {
-            Console.WriteLine(args.TwitchMessage.ToString());
-            //cookieGiver.OnMessage(sender, args);
+            cookieGiver.OnMessage(sender, message);
 
-            if (nextAllowed > DateTime.Now)
-                return;
-
-            if (args.TwitchMessage.Message.StartsWith("!randomtopic"))
-            {
-                sender.SendMessage(args.TwitchMessage.Channel, GetARandomTopic().Substring(39));
-            }
-
-            nextAllowed = DateTime.Now.AddSeconds(1);
         }
 
-
-        string GetARandomTopic()
-        {
-            string response;
-            HttpWebRequest request = WebRequest.CreateHttp("http://www.conversationstarters.com/random.php");
-            using (StreamReader sr = new StreamReader(request.GetResponse().GetResponseStream()))
-            {
-                response = sr.ReadToEnd();
-            }
-            return response;
-        }
     }
 
     public static class Extensions
