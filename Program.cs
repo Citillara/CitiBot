@@ -81,7 +81,7 @@ namespace CitiBot
         void client_OnPerform(TwitchClient sender)
         {
             sender.Join("#citillara");
-            //sender.Join("#elbodykso");
+            sender.Join("#elbodykso");
             //sender.Join("#infoutlaw");
             //sender.Join("#nickynoel");
             //sender.Join("#crumps2");
@@ -99,6 +99,10 @@ namespace CitiBot
         void client_OnMessage(TwitchClient sender, TwitchMessage message)
         {
             cookieGiver.OnMessage(sender, message);
+            if (message.Message.StartsWith("!now"))
+            {
+                sender.SendMessage(message.Channel, DateTime.Now.ToLongTimeString());
+            }
 
         }
 

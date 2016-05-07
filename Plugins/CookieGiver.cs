@@ -23,11 +23,43 @@ namespace CitiBot.Plugins
         private Dictionary<string, int> m_delay_database = new Dictionary<string, int>();
         private List<string> m_list_of_cookies;
         private List<Activities> m_activities;
-
+        
 
         public CookieGiver()
         {
             Load();
+        }
+
+        public void Save()
+        {
+            CookieUser[] users = m_user_database.Values.ToArray();
+            ToolBox.Serialize<CookieUser[]>(base.ToString(), users);
+
+        }
+
+        public void Load()
+        {
+            var t = ToolBox.Deserialize<CookieUser[]>(base.ToString());
+            if (t != null)
+                foreach (var tt in t)
+                    m_user_database.Add(tt.Username, tt);
+
+            m_list_of_cookies = File.ReadAllLines("Plugins/Databases/Cookies.txt").ToList();
+
+            string[] factivities = File.ReadAllLines("Plugins/Databases/CaloriesPerActivity.txt");
+            m_activities = new List<Activities>(factivities.Length);
+            foreach (string s in factivities)
+            {
+                string[] split = s.Split('\t');
+                if (split.Length == 5)
+                    m_activities.Add(new Activities()
+                    {
+                        Name = split[0],
+                        Amount = int.Parse(split[2])
+                    });
+            }
+
+
         }
 
         public void OnMessage(TwitchClient client, TwitchMessage message)
@@ -47,6 +79,8 @@ namespace CitiBot.Plugins
                 case "!wrcookie":
                     GiveCookie(client, message);
                     break;
+                case "!rank":
+                case "!cookierank":
                 case "!cookiecount":
                     DisplayCookieCount(client, message);
                     break;
@@ -69,17 +103,23 @@ namespace CitiBot.Plugins
                 case "!dbcookiecount":
                     DisplayDatabaseCookieCount(client, message);
                     break;
+                case "!top10":
+                    DisplayTop(client, message, 10);
+                    break;
+                case "!yoshi":
+                    SendYoshi(client, message);
+                    break;
                 default:
+                    Console.WriteLine(msg);
                     break;
 
             }
-            m_previousSend = DateTime.Now.AddSeconds(1); // Hardcoded limitation
+            m_previousSend = DateTime.Now.AddMilliseconds(200); // Hardcoded limitation
         }
 
-        private void DisplayDatabaseCookieCount(TwitchClient client, TwitchMessage message)
-        {
-            client.SendMessage(message.Channel, "Database contains {0} cookies", m_list_of_cookies.Count());
-        }
+
+
+
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
         {
@@ -122,12 +162,68 @@ namespace CitiBot.Plugins
                 client.SendMessage(message.Channel, "Sorry {0}, this command is for mods and above only.", message.SenderDisplayName);
             }
         }
+        private void ChangeCookieDelay(TwitchClient client, TwitchMessage message)
+        {
+            if (message.UserType >= TwitchUserTypes.Broadcaster)
+            {
+                string[] split = message.Message.Split(' ');
+                int time = 0;
+                if (split.Length > 1 && int.TryParse(split[1], out time))
+                {
+                    if (time > 0)
+                    {
+                        if (m_delay_database.ContainsKey(message.Channel))
+                            m_delay_database[message.Channel] = time;
+                        else
+                            m_delay_database.Add(message.Channel, time);
 
+                        client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
+                    }
+                }
+            }
+            else
+            {
+                client.SendMessage(message.Channel, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+            }
+        }
         private void DisplayCommands(TwitchClient client, TwitchMessage message)
         {
-            client.SendMessage(message.Channel, "Commands are : !cookie !cookiecount !cookiedelay !randomtopic. Type !help <command> for usage");
+            client.SendMessage(message.Channel, "Commands are : !cookie !cookiecount !cookiedelay Type !help <command> for usage");
         }
+        private void DisplayCookieCount(TwitchClient client, TwitchMessage message)
+        {
+            string key = message.SenderName;
+            if (m_user_database.ContainsKey(key) && m_user_database[key].CookieReceived > 0)
+            {
+                var sorted = from db in m_user_database
+                             orderby db.Value.CookieReceived descending
+                             select new
+                             {
+                                 Key = db.Key,
+                                 Rank = (from dbb in m_user_database
+                                         where dbb.Value.CookieReceived > db.Value.CookieReceived
+                                         select dbb).Count() + 1
+                             };
 
+                int cookies = m_user_database[key].CookieReceived;
+                client.SendMessage(message.Channel, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
+                    message.SenderDisplayName,
+                    cookies,
+                    Ranking(sorted.Where(s => s.Key == key).First().Rank),
+                    sorted.Count(),
+                    Calories(cookies),
+                    GetActivity(cookies)
+                    );
+            }
+            else
+            {
+                client.SendMessage(message.Channel, "Sorry {0}, but you havn't received any cookies so far. Type !cookies to get some", message.SenderDisplayName);
+            }
+        }
+        private void DisplayDatabaseCookieCount(TwitchClient client, TwitchMessage message)
+        {
+            client.SendMessage(message.Channel, "Database contains {0} cookies", m_list_of_cookies.Count());
+        }
         private void DisplayHelp(TwitchClient client, TwitchMessage message)
         {
             string[] split = message.Message.Split(' ');
@@ -163,91 +259,27 @@ namespace CitiBot.Plugins
                 }
             }
         }
-
-        private void Rehash(TwitchClient client, TwitchMessage message)
+        private void DisplayTop(TwitchClient client, TwitchMessage message, int top)
         {
-            if (message.UserType >= TwitchUserTypes.Citillara)
-            {
-                m_list_of_cookies = File.ReadAllLines("Plugins/Databases/Cookies.txt").ToList();
-                client.SendMessage(message.Channel, "Database reloaded with {0} cookies", m_list_of_cookies.Count());
-            }
+            var sorted = from db in m_user_database
+                         orderby db.Value.CookieReceived descending
+                         select new
+                         {
+                             Key = db.Key,
+                             Rank = (from dbb in m_user_database
+                                     where dbb.Value.CookieReceived > db.Value.CookieReceived
+                                     select dbb).Count() + 1
+                         };
+            var sorted_ordered = from sr in sorted
+                     orderby sr.Rank ascending
+                         select sr;
+            StringBuilder sb = new StringBuilder();
+            foreach (var el in sorted_ordered.Take(top))
+                sb.AppendFormat("{0}. {1} ({2}) - ", el.Rank, el.Key, m_user_database[el.Key].CookieReceived);
+            client.SendMessage(message.Channel, sb.ToString());
+            
         }
-        private void ChangeCookieDelay(TwitchClient client, TwitchMessage message)
-        {
-            if (message.UserType >= TwitchUserTypes.Broadcaster)
-            {
-                string[] split = message.Message.Split(' ');
-                int time = 0;
-                if (split.Length > 1 && int.TryParse(split[1], out time))
-                {
-                    if (time > 0)
-                    {
-                        if (m_delay_database.ContainsKey(message.Channel))
-                            m_delay_database[message.Channel] = time;
-                        else
-                            m_delay_database.Add(message.Channel, time);
-
-                        client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
-                    }
-                }
-            }
-            else
-            {
-                client.SendMessage(message.Channel, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
-            }
-        }
-
-        [DataContract]
-        public struct CookieUser
-        {
-            [DataMember]
-            public int CookieReceived;
-            [DataMember]
-            public DateTime LastReceived;
-            [DataMember(IsRequired = false)]
-            public DateTime LastSend;
-            [DataMember]
-            public string Username;
-        }
-
-        public struct Activities
-        {
-            public string Name;
-            public int Amount;
-        }
-
-        void DisplayCookieCount(TwitchClient client, TwitchMessage message)
-        {
-            string key = message.SenderName;
-            if (m_user_database.ContainsKey(key) && m_user_database[key].CookieReceived > 0)
-            {
-                var sorted = from db in m_user_database
-                             orderby db.Value.CookieReceived descending
-                             select new
-                             {
-                                 Key = db.Key,
-                                 Rank = (from dbb in m_user_database
-                                         where dbb.Value.CookieReceived > db.Value.CookieReceived
-                                         select dbb).Count() + 1
-                             };
-
-                int cookies = m_user_database[key].CookieReceived;
-                client.SendMessage(message.Channel, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
-                    message.SenderDisplayName,
-                    cookies,
-                    Ranking(sorted.Where(s => s.Key == key).First().Rank),
-                    sorted.Count(),
-                    Calories(cookies),
-                    GetActivity(cookies)
-                    );
-            }
-            else
-            {
-                client.SendMessage(message.Channel, "Sorry {0}, but you havn't received any cookies so far. Type !cookies to get some", message.SenderDisplayName);
-            }
-        }
-
-        void GiveCookie(TwitchClient client, TwitchMessage message)
+        private void GiveCookie(TwitchClient client, TwitchMessage message)
         {
             int forcedCookies = -1;
             bool targetIsNotSender = false;
@@ -324,7 +356,8 @@ namespace CitiBot.Plugins
                     LastReceived = DateTime.MinValue,
                     CookieReceived = 0,
                     Username = senderDatabaseKey,
-                    LastSend = DateTime.Now
+                    LastSend = DateTime.Now,
+                    LastYoshiBribe = DateTime.MinValue
                 });
             }
 
@@ -394,6 +427,62 @@ namespace CitiBot.Plugins
             // Save data
             Save();
         }
+        private void Rehash(TwitchClient client, TwitchMessage message)
+        {
+            if (message.UserType >= TwitchUserTypes.Citillara)
+            {
+                m_list_of_cookies = File.ReadAllLines("Plugins/Databases/Cookies.txt").ToList();
+                client.SendMessage(message.Channel, "Database reloaded with {0} cookies", m_list_of_cookies.Count());
+            }
+        }
+        private void SendYoshi(TwitchClient client, TwitchMessage message)
+        {
+            string key = message.SenderName;
+            var split = message.Message.Split(' ');
+            int bribe_amount = -1;
+            if (split.Length < 2 || !int.TryParse(split[1], out bribe_amount) || bribe_amount <= 0)
+            {
+                client.SendMessage("Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
+                return;
+            }
+            if (!m_user_database.ContainsKey(key))
+            {
+                client.SendMessage("Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
+                return;
+            }
+            if (bribe_amount > m_user_database[key].CookieReceived)
+            {
+                client.SendMessage("Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
+            }
+            if (m_user_database[key].LastYoshiBribe.AddMinutes(10) > DateTime.Now)
+            {
+                client.SendMessage("Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
+            }
+            var briber = m_user_database[key];
+            briber.CookieReceived -= bribe_amount;
+            m_user_database[key] = briber;
+
+            int quantity = 0;
+            quantity = m_random.Next(1, 3 * bribe_amount);
+
+            var users = m_user_database.Keys.ToList();
+            int index = m_random.Next(0, users.Count());
+            string targetkey = users[index];
+
+            var target = m_user_database[targetkey];
+            target.CookieReceived -= quantity;
+            if (target.CookieReceived < 0)
+                target.CookieReceived = 0;
+            m_user_database[targetkey] = target;
+
+            client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! He now has {3} cookies left",
+                message.SenderDisplayName,
+                quantity,
+                target.Username,
+                target.CookieReceived);
+
+            Save();
+        }
 
         public static string Ranking(int number)
         {
@@ -409,7 +498,6 @@ namespace CitiBot.Plugins
 
             return nb;
         }
-
         public static string NumberToWords(int number)
         {
             if (number == 0)
@@ -458,7 +546,6 @@ namespace CitiBot.Plugins
 
             return words;
         }
-
         public string Calories(int numberOfCookies)
         {
             decimal d = numberOfCookies * CAL_PER_COOKIE;
@@ -475,7 +562,6 @@ namespace CitiBot.Plugins
                 return string.Format("{0} cal", d);
             }
         }
-
         public string GetActivity(int numberOfCookies)
         {
             int act = m_random.Next(0, m_activities.Count());
@@ -489,40 +575,7 @@ namespace CitiBot.Plugins
                 return string.Format("{2}min of {3}", ts.Days, ts.Hours, ts.Minutes, m_activities[act].Name.ToLowerInvariant());
 
         }
-
-        public void Save()
-        {
-            CookieUser[] users = m_user_database.Values.ToArray();
-            ToolBox.Serialize<CookieUser[]>(base.ToString(), users);
-
-        }
-
-        public void Load()
-        {
-            var t = ToolBox.Deserialize<CookieUser[]>(base.ToString());
-            if (t != null)
-                foreach (var tt in t)
-                    m_user_database.Add(tt.Username, tt);
-
-            m_list_of_cookies = File.ReadAllLines("Plugins/Databases/Cookies.txt").ToList();
-
-            string[] factivities = File.ReadAllLines("Plugins/Databases/CaloriesPerActivity.txt");
-            m_activities = new List<Activities>(factivities.Length);
-            foreach (string s in factivities)
-            {
-                string[] split = s.Split('\t');
-                if (split.Length == 5)
-                    m_activities.Add(new Activities()
-                    {
-                        Name = split[0],
-                        Amount = int.Parse(split[2])
-                    });
-            }
-
-
-        }
-
-        private bool CheckAllowedCookie(string cookie)
+        private static bool CheckAllowedCookie(string cookie)
         {
             if (cookie.Contains("http"))
                 return false;
@@ -538,5 +591,27 @@ namespace CitiBot.Plugins
                 return false;
             return true;
         }
+
+        [DataContract]
+        public struct CookieUser
+        {
+            [DataMember]
+            public int CookieReceived;
+            [DataMember]
+            public DateTime LastReceived;
+            [DataMember]
+            public DateTime LastYoshiBribe;
+            [DataMember(IsRequired = false)]
+            public DateTime LastSend;
+            [DataMember]
+            public string Username;
+        }
+
+        public struct Activities
+        {
+            public string Name;
+            public int Amount;
+        }
+
     }
 }
