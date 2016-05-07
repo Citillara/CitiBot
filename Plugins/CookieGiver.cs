@@ -64,9 +64,15 @@ namespace CitiBot.Plugins
 
         public void OnMessage(TwitchClient client, TwitchMessage message)
         {
-            // No more than delay (1s)
-            if (DateTime.Now < m_previousSend)
+            if (!message.Message.StartsWith("!"))
                 return;
+            // No more than delay (1s)
+            if(DateTime.Now < m_previousSend)
+            {
+                Console.WriteLine(message);
+                Console.WriteLine("Ignored, too fast");
+                return;
+            }
 
             string msg = message.Message.Split(' ')[0];
 
@@ -110,11 +116,12 @@ namespace CitiBot.Plugins
                     SendYoshi(client, message);
                     break;
                 default:
+                    Console.WriteLine(message);
                     Console.WriteLine(msg);
                     break;
 
             }
-            m_previousSend = DateTime.Now.AddMilliseconds(200); // Hardcoded limitation
+            m_previousSend = DateTime.Now.AddMilliseconds(1000); // Hardcoded limitation
         }
 
 
