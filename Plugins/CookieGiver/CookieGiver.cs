@@ -1,4 +1,4 @@
-﻿using Irc;
+﻿using CitiBot.Plugins.CookieGiver.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,7 @@ using Twitch;
 using Twitch.Models;
 using Twitch.Tools;
 
-namespace CitiBot.Plugins
+namespace CitiBot.Plugins.CookieGiver
 {
     public class CookieGiver
     {
@@ -19,34 +19,21 @@ namespace CitiBot.Plugins
         private Random m_random = new Random();
         private DateTime m_previousSend = DateTime.MinValue;
 
-        private Dictionary<string, CookieUser> m_user_database = new Dictionary<string, CookieUser>();
         private Dictionary<string, int> m_delay_database = new Dictionary<string, int>();
         private List<string> m_list_of_cookies;
         private List<Activities> m_activities;
-        
 
         public CookieGiver()
         {
             Load();
         }
 
-        public void Save()
-        {
-            CookieUser[] users = m_user_database.Values.ToArray();
-            ToolBox.Serialize<CookieUser[]>(base.ToString(), users);
-
-        }
-
         public void Load()
         {
-            var t = ToolBox.Deserialize<CookieUser[]>(base.ToString());
-            if (t != null)
-                foreach (var tt in t)
-                    m_user_database.Add(tt.Username, tt);
 
-            m_list_of_cookies = File.ReadAllLines("Plugins/Databases/Cookies.txt").ToList();
+            m_list_of_cookies = File.ReadAllLines("Plugins/CookieGiver/Databases/Cookies.txt").ToList();
 
-            string[] factivities = File.ReadAllLines("Plugins/Databases/CaloriesPerActivity.txt");
+            string[] factivities = File.ReadAllLines("Plugins/CookieGiver/Databases/CaloriesPerActivity.txt");
             m_activities = new List<Activities>(factivities.Length);
             foreach (string s in factivities)
             {
@@ -59,7 +46,6 @@ namespace CitiBot.Plugins
                     });
             }
 
-
         }
 
         public void OnMessage(TwitchClient client, TwitchMessage message)
@@ -67,7 +53,7 @@ namespace CitiBot.Plugins
             if (!message.Message.StartsWith("!"))
                 return;
             // No more than delay (1s)
-            if(DateTime.Now < m_previousSend)
+            if (DateTime.Now < m_previousSend)
             {
                 Console.WriteLine(message);
                 Console.WriteLine("Ignored, too fast");
@@ -110,7 +96,7 @@ namespace CitiBot.Plugins
                     DisplayDatabaseCookieCount(client, message);
                     break;
                 case "!top10":
-                    DisplayTop(client, message, 10);
+                    DisplayTop(client, message);
                     break;
                 case "!yoshi":
                     SendYoshi(client, message);
@@ -123,10 +109,6 @@ namespace CitiBot.Plugins
             }
             m_previousSend = DateTime.Now.AddMilliseconds(200); // Hardcoded limitation
         }
-
-
-
-
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
         {
@@ -199,25 +181,21 @@ namespace CitiBot.Plugins
         }
         private void DisplayCookieCount(TwitchClient client, TwitchMessage message)
         {
-            string key = message.SenderName;
-            if (m_user_database.ContainsKey(key) && m_user_database[key].CookieReceived > 0)
-            {
-                var sorted = from db in m_user_database
-                             orderby db.Value.CookieReceived descending
-                             select new
-                             {
-                                 Key = db.Key,
-                                 Rank = (from dbb in m_user_database
-                                         where dbb.Value.CookieReceived > db.Value.CookieReceived
-                                         select dbb).Count() + 1
-                             };
+            string channel = message.Channel;
+            string username = message.SenderName;
 
-                int cookies = m_user_database[key].CookieReceived;
+            var user = CookieUser.GetUser(channel, username);
+            if (user != null && user.CookieReceived > 0)
+            {
+                var ranking = CookieUser.GetUserRankingInChannel(channel, username);
+                var number_of_users = CookieUser.GetChannelUserCount(channel);
+
+                int cookies = user.CookieReceived;
                 client.SendMessage(message.Channel, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
                     message.SenderDisplayName,
-                    cookies,
-                    Ranking(sorted.Where(s => s.Key == key).First().Rank),
-                    sorted.Count(),
+                    user.CookieReceived,
+                    Ranking(ranking),
+                    number_of_users,
                     Calories(cookies),
                     GetActivity(cookies)
                     );
@@ -266,25 +244,29 @@ namespace CitiBot.Plugins
                 }
             }
         }
-        private void DisplayTop(TwitchClient client, TwitchMessage message, int top)
+        private void DisplayTop(TwitchClient client, TwitchMessage message)
         {
-            var sorted = from db in m_user_database
-                         orderby db.Value.CookieReceived descending
+            var top_10 = CookieUser.GetChannelTopUsers(message.Channel, 10);
+
+            var sorted = from db in top_10
+                         orderby db.CookieReceived descending
                          select new
                          {
-                             Key = db.Key,
-                             Rank = (from dbb in m_user_database
-                                     where dbb.Value.CookieReceived > db.Value.CookieReceived
-                                     select dbb).Count() + 1
+                             Key = db.Username,
+                             Rank = (from dbb in top_10
+                                     where dbb.CookieReceived > db.CookieReceived
+                                     select dbb).Count() + 1,
+                             CookieReceived = db.CookieReceived
+
                          };
             var sorted_ordered = from sr in sorted
-                     orderby sr.Rank ascending
-                         select sr;
+                                 orderby sr.Rank ascending
+                                 select sr;
             StringBuilder sb = new StringBuilder();
-            foreach (var el in sorted_ordered.Take(top))
-                sb.AppendFormat("{0}. {1} ({2}) - ", el.Rank, el.Key, m_user_database[el.Key].CookieReceived);
+            foreach (var el in sorted_ordered)
+                sb.AppendFormat("{0}. {1} ({2}) - ", el.Rank, el.Key, el.CookieReceived);
             client.SendMessage(message.Channel, sb.ToString());
-            
+
         }
         private void GiveCookie(TwitchClient client, TwitchMessage message)
         {
@@ -326,11 +308,14 @@ namespace CitiBot.Plugins
             string targetDatabaseKey = targetIsNotSender ? target.ToLowerInvariant() : message.SenderName.ToLowerInvariant();
             string senderDatabaseKey = message.SenderName.ToLowerInvariant();
 
+            var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey);
+
             // Ignores checks if sender is Broadcaster or above
             if (message.UserType < TwitchUserTypes.Broadcaster)
             {
+
                 // Sender is in database
-                if (m_user_database.ContainsKey(senderDatabaseKey))
+                if (sender_user_database != null)
                 {
                     int delay_in_seconds = 60; // default;
 
@@ -339,33 +324,34 @@ namespace CitiBot.Plugins
                         delay_in_seconds = m_delay_database[message.Channel];
 
                     // Sender is sending before the delay
-                    if (m_user_database[senderDatabaseKey].LastSend.AddSeconds(delay_in_seconds) > DateTime.Now)
+                    if (sender_user_database.LastSend.HasValue && sender_user_database.LastSend.Value.AddSeconds(delay_in_seconds) > DateTime.Now)
                     {
-                        client.SendMessage(message.Channel, "Sorry {0} buy you can only send cookies every {1} seconds", message.SenderDisplayName, delay_in_seconds);
+                        client.SendMessage(message.Channel, "Sorry {0} buy you can only get cookies every {1} seconds", message.SenderDisplayName, delay_in_seconds);
                         return; // Prevent him from sending
                     }
                 }
             }
 
 
-            if (m_user_database.ContainsKey(senderDatabaseKey))
+            if (sender_user_database != null)
             {
                 // Sender is in database
-                var sender = m_user_database[senderDatabaseKey];
-                sender.LastSend = DateTime.Now;
-                m_user_database[senderDatabaseKey] = sender;
+                sender_user_database.LastSend = DateTime.Now;
+                sender_user_database.Save();
             }
             else
             {
                 // Sender is not in the database
-                m_user_database.Add(senderDatabaseKey, new CookieUser()
+                sender_user_database = new CookieUser()
                 {
                     LastReceived = DateTime.MinValue,
                     CookieReceived = 0,
                     Username = senderDatabaseKey,
                     LastSend = DateTime.Now,
-                    LastYoshiBribe = DateTime.MinValue
-                });
+                    LastYoshiBribe = DateTime.MinValue,
+                    Channel = channel
+                };
+                sender_user_database.Save();
             }
 
             // Select a cookie
@@ -389,24 +375,26 @@ namespace CitiBot.Plugins
                 quantity = forcedCookies;
 
 
-            if (m_user_database.ContainsKey(targetDatabaseKey))
+            var target_user_database = CookieUser.GetUser(channel, targetDatabaseKey);
+            if (target_user_database != null)
             {
                 // User is in the database
-                var val = m_user_database[targetDatabaseKey];
-                val.LastReceived = DateTime.Now;
-                val.CookieReceived += quantity;
-                m_user_database[targetDatabaseKey] = val;
+                target_user_database.LastReceived = DateTime.Now;
+                target_user_database.CookieReceived += quantity;
+                target_user_database.Save();
             }
             else
             {
                 // User is not in the database
-                m_user_database.Add(targetDatabaseKey, new CookieUser()
+                target_user_database = new CookieUser()
                 {
                     LastReceived = DateTime.Now,
                     CookieReceived = quantity,
                     Username = targetDatabaseKey,
-                    LastSend = DateTime.MinValue
-                });
+                    LastSend = DateTime.MinValue,
+                    Channel = channel
+                };
+                target_user_database.Save();
             }
 
 
@@ -431,8 +419,6 @@ namespace CitiBot.Plugins
                 msg = msg.Replace("cookie", "cookies");
             client.SendAction(channel, msg);
 
-            // Save data
-            Save();
         }
         private void Rehash(TwitchClient client, TwitchMessage message)
         {
@@ -444,25 +430,26 @@ namespace CitiBot.Plugins
         }
         private void SendYoshi(TwitchClient client, TwitchMessage message)
         {
-            string key = message.SenderName;
             var split = message.Message.Split(' ');
             int bribe_amount = -1;
+            var briber = CookieUser.GetUser(message.Channel, message.SenderName);
+
             if (split.Length < 2 || !int.TryParse(split[1], out bribe_amount) || bribe_amount <= 0)
             {
                 client.SendMessage(message.Channel, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
                 return;
             }
-            if (!m_user_database.ContainsKey(key))
+            if (briber == null)
             {
                 client.SendMessage(message.Channel, "Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
-            if (bribe_amount > m_user_database[key].CookieReceived)
+            if (bribe_amount > briber.CookieReceived)
             {
                 client.SendMessage(message.Channel, "Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
-            if (m_user_database[key].LastYoshiBribe.AddMinutes(10) > DateTime.Now)
+            if (briber.LastYoshiBribe.HasValue && briber.LastYoshiBribe.Value.AddMinutes(10) > DateTime.Now)
             {
                 client.SendMessage(message.Channel, "Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
                 return;
@@ -470,43 +457,40 @@ namespace CitiBot.Plugins
             int quantity = 0;
             quantity = m_random.Next(1, 3 * bribe_amount);
 
-            var users = m_user_database.Keys.ToList();
-            int index = m_random.Next(0, users.Count());
-            string targetkey = users[index];
+            var user_array = CookieUser.GetChannelUserIdsWithCookies(message.Channel).ToArray();
 
-
-            var briber = m_user_database[key];
-            var target = m_user_database[targetkey];
-            if (target.CookieReceived == 0)
+            if (user_array.Count() == 0)
             {
-                briber.CookieReceived -= (bribe_amount / 2);
-                client.SendMessage(message.Channel, "{0} bribed Yoshi, who wanted to devour {1}'s cookies of {2}, but he had none left :'( Yoshi only ate half of the bribe",
-                    message.SenderDisplayName,
-                    target.Username,
-                    target.CookieReceived);
+                client.SendMessage(message.Channel, "There is no cookies that yoshi can devour, Yoshi is sad :'( ");
+                return;
             }
-            else
-            {
-                briber.CookieReceived -= bribe_amount;
+            int index = m_random.Next(0, user_array.Count());
+            int targetId = user_array[index];
 
-                target.CookieReceived -= quantity;
-                if (target.CookieReceived < 0)
-                    target.CookieReceived = 0;
 
-                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! He now has {3} cookies left",
-                    message.SenderDisplayName,
-                    quantity,
-                    target.Username,
-                    target.CookieReceived);
+            briber.CookieReceived -= bribe_amount;
 
-            }
+
+            var target = CookieUser.GetUser(targetId);
+
+            target.CookieReceived -= quantity;
+            // in case the target is also the briber we still have the initial amount of cookies so remove the bribe again
+            if (targetId == briber.Id)
+                target.CookieReceived -= bribe_amount;
+
+            if (target.CookieReceived < 0)
+                target.CookieReceived = 0;
+
+            client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! He now has {3} cookies left",
+                message.SenderDisplayName,
+                quantity,
+                target.Username,
+                target.CookieReceived);
 
             briber.LastYoshiBribe = DateTime.Now;
 
-            m_user_database[targetkey] = target;
-            m_user_database[key] = briber;
-
-            Save();
+            briber.Save();
+            target.Save();
         }
 
         public static string Ranking(int number)
@@ -615,21 +599,6 @@ namespace CitiBot.Plugins
             if (cookie.Contains("â"))
                 return false;
             return true;
-        }
-
-        [DataContract]
-        public struct CookieUser
-        {
-            [DataMember]
-            public int CookieReceived;
-            [DataMember]
-            public DateTime LastReceived;
-            [DataMember]
-            public DateTime LastYoshiBribe;
-            [DataMember(IsRequired = false)]
-            public DateTime LastSend;
-            [DataMember]
-            public string Username;
         }
 
         public struct Activities

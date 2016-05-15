@@ -1,9 +1,12 @@
 ﻿using CitiBot.Plugins;
+using CitiBot.Plugins.CookieGiver;
+using CitiBot.Plugins.CookieGiver.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -14,6 +17,7 @@ namespace CitiBot
 {
     class Program
     {
+
 
         static void Main(string[] args)
         {
@@ -98,14 +102,52 @@ namespace CitiBot
 
         void client_OnMessage(TwitchClient sender, TwitchMessage message)
         {
+            if(DoGenericCommands(sender, message))
+                return;
             cookieGiver.OnMessage(sender, message);
-            if (message.Message.StartsWith("!now"))
-            {
-                sender.SendMessage(message.Channel, DateTime.Now.ToLongTimeString());
-            }
 
         }
 
+
+        bool DoGenericCommands(TwitchClient sender, TwitchMessage message)
+        {
+            if (!message.Message.StartsWith("!"))
+                return false;
+            var split = message.Message.Split(' ');
+            string msg = split[0];
+
+            switch (msg)
+            {
+                case "!join" :
+                    if (message.UserType < TwitchUserTypes.BotMaster)
+                        sender.SendMessage(message.Channel, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
+                    else
+                        if (split.Length > 1)
+                            if (split[1].StartsWith("#"))
+                            {
+                                sender.Join(split[1]);
+                                sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", split[1], message.SenderDisplayName);
+                            }
+                            else
+                                sender.SendMessage(message.Channel, "Please specify a correct channel");
+                        else
+                        {
+                            sender.Join("#" + message.SenderName);
+                            sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", "#" + message.SenderName, message.SenderDisplayName);
+                        }
+                    return true;
+                case "!part":
+                    if (message.UserType < TwitchUserTypes.Broadcaster)
+                        sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Broadcaster and above", message.SenderDisplayName);
+                    else
+                    {
+                        sender.Part(message.Channel);
+                        sender.SendMessage("#citillara", "Parting {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
+                    }
+                    return true;
+                default: return false;
+            }
+        }
     }
 
     public static class Extensions
