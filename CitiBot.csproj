@@ -75,7 +75,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database\MySQLDatabase.cs" />
-    <Compile Include="NHibernate\Objects\IntQuery.cs" />
     <Compile Include="Plugins\CookieGiver\CookieGiver.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
     <Compile Include="Program.cs" />
@@ -102,9 +101,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="config.ini.sample">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />

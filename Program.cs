@@ -3,6 +3,7 @@ using CitiBot.Plugins.CookieGiver;
 using CitiBot.Plugins.CookieGiver.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -24,17 +25,14 @@ namespace CitiBot
             new Program().MainLoop();
         }
 
-        string name;
-        string password;
+        string name = ConfigurationManager.ConnectionStrings["TwitchLogin"].ConnectionString;
+        string password = ConfigurationManager.ConnectionStrings["TwitchPassword"].ConnectionString;
         TwitchClient client;
         CookieGiver cookieGiver = new CookieGiver();
         Regex r = new Regex(@"[^\u0000-\u007F]", RegexOptions.Compiled);
 
         void MainLoop()
         {
-            if (!LoadInit())
-                return;
-
             client = new TwitchClient(name, password);
             client.OnMessage += client_OnMessage;
             client.OnPerform += client_OnPerform;
@@ -48,34 +46,6 @@ namespace CitiBot
             }
         }
 
-
-        bool LoadInit()
-        {
-            if (!File.Exists("config.ini"))
-                return false;
-            var l = File.ReadAllLines("config.ini");
-            foreach (string line in l)
-            {
-                if (line.StartsWith("name="))
-                {
-                    var spl = line.Split('=');
-                    if (spl.Length > 1)
-                        name = spl[1];
-                }
-                else if (line.StartsWith("password="))
-                {
-                    var spl = line.Split('=');
-                    if (spl.Length > 1)
-                        password = spl[1];
-                }
-            }
-            if (string.IsNullOrEmpty(name))
-                return false;
-            if (string.IsNullOrEmpty(password))
-                return false;
-
-            return true;
-        }
 
         void client_OnPart(TwitchClient sender, Twitch.Models.TwitchClientOnPartEventArgs args)
         {

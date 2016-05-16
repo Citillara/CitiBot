@@ -2,6 +2,7 @@
 using MySql.Data.Entity;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data.Common;
 using System.Data.Entity;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace CitiBot
     [DbConfigurationType(typeof(MySqlEFConfiguration))]
     public class Database : DbContext
     {
-        private static readonly string ConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings["Database"].ConnectionString;
+        private static readonly string ConnectionString = ConfigurationManager.ConnectionStrings["Database"].ConnectionString;
 
         public Database()
             : base(ConnectionString)

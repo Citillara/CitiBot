@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <connectionStrings>
+    <add name="Database"
+         connectionString="server=localhost;port=3306;database=xxxxxxxx;uid=xxxxxxxx;password=xxxxxxxxxx"
+         providerName="System.Data.SqlClient" />
+    <add name="TwitchLogin" connectionString="CitiBot" />
+    <add name="TwitchPassword" connectionString="oauth:xxxxxxxxxxxx" />
+  </connectionStrings>
+</configuration>
