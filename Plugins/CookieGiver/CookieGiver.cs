@@ -20,8 +20,6 @@ namespace CitiBot.Plugins.CookieGiver
         private DateTime m_previousSend = DateTime.MinValue;
 
         private Dictionary<string, int> m_delay_database = new Dictionary<string, int>();
-        private List<string> m_list_of_cookies;
-        private List<Activities> m_activities;
 
         public CookieGiver()
         {
@@ -30,21 +28,6 @@ namespace CitiBot.Plugins.CookieGiver
 
         public void Load()
         {
-
-            m_list_of_cookies = File.ReadAllLines("Plugins/CookieGiver/Databases/Cookies.txt").ToList();
-
-            string[] factivities = File.ReadAllLines("Plugins/CookieGiver/Databases/CaloriesPerActivity.txt");
-            m_activities = new List<Activities>(factivities.Length);
-            foreach (string s in factivities)
-            {
-                string[] split = s.Split('\t');
-                if (split.Length == 5)
-                    m_activities.Add(new Activities()
-                    {
-                        Name = split[0],
-                        Amount = int.Parse(split[2])
-                    });
-            }
 
         }
 
@@ -89,14 +72,14 @@ namespace CitiBot.Plugins.CookieGiver
                 case "!newcookie":
                     AddCookieFlavor(client, message);
                     break;
-                case "!rehash":
-                    Rehash(client, message);
-                    break;
                 case "!dbcookiecount":
                     DisplayDatabaseCookieCount(client, message);
                     break;
+                case "!top5":
+                    DisplayTop(client, message, 5);
+                    break;
                 case "!top10":
-                    DisplayTop(client, message);
+                    DisplayTop(client, message, 10);
                     break;
                 case "!yoshi":
                     SendYoshi(client, message);
@@ -117,39 +100,43 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
                 return;
             }
-            if (message.UserType >= TwitchUserTypes.Mod)
-            {
-                string msg = message.Message.Replace("\"", "");
-                if (msg.Length > "!newcookie ".Length)
-                {
-                    string sub = msg.Substring("!newcookie ".Length);
-                    if (sub.ToLowerInvariant().Contains("cookie"))
-                    {
-                        if (CheckAllowedCookie(sub))
-                        {
-                            m_list_of_cookies.Add(sub);
-                            File.WriteAllLines("Plugins/Databases/Cookies.txt", m_list_of_cookies);
-                            client.SendMessage(message.Channel, "\"{0}\" have been added to the cookie database", sub);
-                        }
-                        else
-                        {
-                            client.SendMessage(message.Channel, "Sorry {0}, but you're not allowed to add this.", message.SenderDisplayName);
-                        }
-                    }
-                    else
-                    {
-                        client.SendMessage(message.Channel, "Sorry {0}, but the new flavor must contain the word \"cookie\"", message.SenderDisplayName);
-                    }
-                }
-                else
-                {
-                    client.SendMessage(message.Channel, "Please specify what you want to add in the cookie database");
-                }
-            }
-            else
+            if (message.UserType < TwitchUserTypes.Mod)
             {
                 client.SendMessage(message.Channel, "Sorry {0}, this command is for mods and above only.", message.SenderDisplayName);
+                return;
             }
+
+            string msg = message.Message.Replace("\"", "");
+            if (msg.Length <= "!newcookie ".Length)
+            {
+                client.SendMessage(message.Channel, "Please specify what you want to add in the cookie database");
+                return;
+            }
+
+            string sub = msg.Substring("!newcookie ".Length);
+            if (!sub.ToLowerInvariant().Contains("cookie"))
+            {
+                client.SendMessage(message.Channel, "Sorry {0}, but the new flavor must contain the word \"cookie\"", message.SenderDisplayName);
+                return;
+            }
+            if (!CheckAllowedCookie(sub))
+            {
+                client.SendMessage(message.Channel, "Sorry {0}, but you're not allowed to add this.", message.SenderDisplayName);
+                return;
+            }
+
+            var c = new CookieFlavour()
+            {
+                AddedBy = message.SenderName,
+                Text = sub,
+                Channel = message.Channel
+            };
+
+            c.Save();
+
+            client.SendMessage(message.Channel, "\"{0}\" have been added to the cookie database", sub);
+
+
         }
         private void ChangeCookieDelay(TwitchClient client, TwitchMessage message)
         {
@@ -207,7 +194,7 @@ namespace CitiBot.Plugins.CookieGiver
         }
         private void DisplayDatabaseCookieCount(TwitchClient client, TwitchMessage message)
         {
-            client.SendMessage(message.Channel, "Database contains {0} cookies", m_list_of_cookies.Count());
+            client.SendMessage(message.Channel, "Database contains {0} cookies", CookieFlavour.GetCookieCount());
         }
         private void DisplayHelp(TwitchClient client, TwitchMessage message)
         {
@@ -244,9 +231,9 @@ namespace CitiBot.Plugins.CookieGiver
                 }
             }
         }
-        private void DisplayTop(TwitchClient client, TwitchMessage message)
+        private void DisplayTop(TwitchClient client, TwitchMessage message, int count)
         {
-            var top_10 = CookieUser.GetChannelTopUsers(message.Channel, 10);
+            var top_10 = CookieUser.GetChannelTopUsers(message.Channel, count);
 
             var sorted = from db in top_10
                          orderby db.CookieReceived descending
@@ -355,7 +342,9 @@ namespace CitiBot.Plugins.CookieGiver
             }
 
             // Select a cookie
-            int next = m_random.Next(0, m_list_of_cookies.Count);
+            var m_list_of_cookies_ids = CookieFlavour.GetChannelPossibleCookies(message.Channel);
+
+            int next = m_random.Next(0, m_list_of_cookies_ids.Count());
 
             // Select a quantity
             int quantity = 0;
@@ -406,7 +395,9 @@ namespace CitiBot.Plugins.CookieGiver
             else if (quantity > 10)
                 modifier = ". Not bad !";
 
-            string flavor = m_list_of_cookies[next].ToLowerInvariant();
+            int cookie_id_selected = m_list_of_cookies_ids.ToArray()[next];
+
+            string flavor = CookieFlavour.GetCookie(cookie_id_selected).Text.ToLowerInvariant();
             if (split[0].Contains("welcomecookie"))
                 flavor = "welcome cookie";
             else if (split[0].Contains("wrcookie"))
@@ -420,14 +411,7 @@ namespace CitiBot.Plugins.CookieGiver
             client.SendAction(channel, msg);
 
         }
-        private void Rehash(TwitchClient client, TwitchMessage message)
-        {
-            if (message.UserType >= TwitchUserTypes.Citillara)
-            {
-                m_list_of_cookies = File.ReadAllLines("Plugins/Databases/Cookies.txt").ToList();
-                client.SendMessage(message.Channel, "Database reloaded with {0} cookies", m_list_of_cookies.Count());
-            }
-        }
+
         private void SendYoshi(TwitchClient client, TwitchMessage message)
         {
             var split = message.Message.Split(' ');
@@ -573,15 +557,19 @@ namespace CitiBot.Plugins.CookieGiver
         }
         public string GetActivity(int numberOfCookies)
         {
+            var m_activities = CaloriesPerActivity.GetListOfActivities();
             int act = m_random.Next(0, m_activities.Count());
-            long duration = (long)(((decimal)numberOfCookies * (decimal)CAL_PER_COOKIE / (decimal)m_activities[0].Amount) * (decimal)TimeSpan.TicksPerHour);
+
+            var activity = CaloriesPerActivity.GetById(act);
+
+            long duration = (long)(((decimal)numberOfCookies * (decimal)CAL_PER_COOKIE / (decimal)activity.Calories) * (decimal)TimeSpan.TicksPerHour);
             TimeSpan ts = new TimeSpan(duration);
             if (ts.TotalDays > 1)
-                return string.Format("{0}d {1}h {2}min of {3}", ts.Days, ts.Hours, ts.Minutes, m_activities[act].Name.ToLowerInvariant());
+                return string.Format("{0}d {1}h {2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
             else if (ts.TotalHours > 1)
-                return string.Format("{1}h {2}min of {3}", ts.Days, ts.Hours, ts.Minutes, m_activities[act].Name.ToLowerInvariant());
+                return string.Format("{1}h {2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
             else
-                return string.Format("{2}min of {3}", ts.Days, ts.Hours, ts.Minutes, m_activities[act].Name.ToLowerInvariant());
+                return string.Format("{2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
 
         }
         private static bool CheckAllowedCookie(string cookie)
@@ -599,12 +587,6 @@ namespace CitiBot.Plugins.CookieGiver
             if (cookie.Contains("â"))
                 return false;
             return true;
-        }
-
-        public struct Activities
-        {
-            public string Name;
-            public int Amount;
         }
 
     }

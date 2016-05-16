@@ -76,6 +76,8 @@
   <ItemGroup>
     <Compile Include="Database\MySQLDatabase.cs" />
     <Compile Include="Plugins\CookieGiver\CookieGiver.cs" />
+    <Compile Include="Plugins\CookieGiver\Models\CaloriesPerActivity.cs" />
+    <Compile Include="Plugins\CookieGiver\Models\CookieFlavour.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -90,14 +92,6 @@
       <Project>{270c8edd-8688-431d-ae36-e88673e55396}</Project>
       <Name>TwitchClient</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Plugins\CookieGiver\Databases\CaloriesPerActivity.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Plugins\CookieGiver\Databases\Cookies.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">

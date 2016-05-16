@@ -19,6 +19,11 @@ namespace CitiBot
     class Program
     {
 
+        public struct Activities
+        {
+            public string Name;
+            public int Amount;
+        }
 
         static void Main(string[] args)
         {
@@ -115,6 +120,23 @@ namespace CitiBot
                         sender.SendMessage("#citillara", "Parting {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
                     }
                     return true;
+
+                case "!pyramid":
+                    if (message.UserType < TwitchUserTypes.Citillara)
+                        sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Citillara and above", message.SenderDisplayName);
+                    else
+                    {
+                        var icon = split[1] + " ";
+                        sender.SendMessage(message.Channel, icon);
+                        sender.SendMessage(message.Channel, icon + icon);
+                        sender.SendMessage(message.Channel, icon + icon + icon);
+                        sender.SendMessage(message.Channel, icon + icon + icon + icon);
+                        sender.SendMessage(message.Channel, icon + icon + icon);
+                        sender.SendMessage(message.Channel, icon + icon);
+                        sender.SendMessage(message.Channel, icon);
+                    }
+                    return true;
+                    break;
                 default: return false;
             }
         }

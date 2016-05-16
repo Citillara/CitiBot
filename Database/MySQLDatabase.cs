@@ -39,6 +39,7 @@ namespace CitiBot
         }
 
         public DbSet<CookieUser> CookieUsers { get; set; }
-
+        public DbSet<CookieFlavour> CookieFlavours { get; set; }
+        public DbSet<CaloriesPerActivity> CaloriesPerActivity { get; set; }
     }
 }

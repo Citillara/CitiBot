@@ -81,6 +81,15 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
             var db = Database.Instance;
             var id = this.Id;
+
+            if (this.LastReceived == DateTime.MinValue)
+                this.LastReceived = null;
+            if (this.LastSend == DateTime.MinValue)
+                this.LastSend = null;
+            if (this.LastYoshiBribe == DateTime.MinValue)
+                this.LastYoshiBribe = null;
+
+
             if (db.CookieUsers.Any(e => e.Id == id))
             {
                 db.Set<CookieUser>().Attach(this);
@@ -95,15 +104,5 @@ namespace CitiBot.Plugins.CookieGiver.Models
             db.SaveChanges();
         }
 
-    }
-
-
-    public class CookieUserMap : EntityMappingConfiguration<CookieUser>
-    {
-        public CookieUserMap()
-        {
-            this.ToTable("CookieUsers");
-            
-        }
     }
 }
