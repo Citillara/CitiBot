@@ -46,10 +46,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>MySQL\MySql.Data.Entity.EF6.dll</HintPath>
     </Reference>
-    <Reference Include="MySql.Fabric.Plugin, Version=6.9.8.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>MySQL\MySql.Fabric.Plugin.dll</HintPath>
-    </Reference>
     <Reference Include="MySql.Web, Version=6.9.8.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>MySQL\MySql.Web.dll</HintPath>
@@ -77,6 +73,8 @@
     <Compile Include="Database\MySQLDatabase.cs" />
     <Compile Include="Plugins\CookieGiver\CookieGiver.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CaloriesPerActivity.cs" />
+    <Compile Include="Plugins\CookieGiver\Models\CookieBox.cs" />
+    <Compile Include="Plugins\CookieGiver\Models\CookieDelay.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieFlavour.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
     <Compile Include="Program.cs" />
@@ -95,9 +93,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />

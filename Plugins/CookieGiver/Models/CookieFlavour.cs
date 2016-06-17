@@ -26,9 +26,14 @@ namespace CitiBot.Plugins.CookieGiver.Models
         [DataMember]
         public virtual string Text { get; set; }
 
-        public static IEnumerable<Int32> GetChannelPossibleCookies(string channel)
+        public static IEnumerable<Int32> GetChannelCookies(string channel)
         {
-            return Database.Instance.CookieFlavours.Where(c => c.Channel == channel || c.Channel == "all").Select(c => c.Id);
+            return Database.Instance.CookieFlavours.Where(c => c.Channel == channel).Select(c => c.Id);
+        }
+
+        public static IEnumerable<Int32> GetCommonCookies()
+        {
+            return Database.Instance.CookieFlavours.Where(c => c.Channel == "all").Select(c => c.Id);
         }
 
         public static CookieFlavour GetCookie(int id)

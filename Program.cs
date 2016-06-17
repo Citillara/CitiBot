@@ -60,10 +60,12 @@ namespace CitiBot
         void client_OnPerform(TwitchClient sender)
         {
             sender.Join("#citillara");
-            sender.Join("#elbodykso");
+            //sender.Join("#elbodykso");
             //sender.Join("#infoutlaw");
             //sender.Join("#nickynoel");
             //sender.Join("#crumps2");
+            //sender.Join("#twitch");
+            //sender.Join("#ea");
 
             //sender.Join("#mlg");
             /*
@@ -74,18 +76,19 @@ namespace CitiBot
             sender.Join("#angerbeard");*/
         }
 
-
         void client_OnMessage(TwitchClient sender, TwitchMessage message)
         {
+            //Console.WriteLine(message);
             if(DoGenericCommands(sender, message))
                 return;
             cookieGiver.OnMessage(sender, message);
-
+            
         }
 
 
         bool DoGenericCommands(TwitchClient sender, TwitchMessage message)
         {
+
             if (!message.Message.StartsWith("!"))
                 return false;
             var split = message.Message.Split(' ');
@@ -95,7 +98,7 @@ namespace CitiBot
             {
                 case "!join" :
                     if (message.UserType < TwitchUserTypes.BotMaster)
-                        sender.SendMessage(message.Channel, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
+                        sender.SendWhisper(message.SenderName, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
                     else
                         if (split.Length > 1)
                             if (split[1].StartsWith("#"))
@@ -120,10 +123,11 @@ namespace CitiBot
                         sender.SendMessage("#citillara", "Parting {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
                     }
                     return true;
-
                 case "!pyramid":
                     if (message.UserType < TwitchUserTypes.Citillara)
-                        sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Citillara and above", message.SenderDisplayName);
+                    {
+                        //sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Citillara", message.SenderDisplayName);
+                    }
                     else
                     {
                         var icon = split[1] + " ";
@@ -136,7 +140,6 @@ namespace CitiBot
                         sender.SendMessage(message.Channel, icon);
                     }
                     return true;
-                    break;
                 default: return false;
             }
         }

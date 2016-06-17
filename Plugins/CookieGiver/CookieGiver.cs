@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Twitch;
 using Twitch.Models;
-using Twitch.Tools;
 
 namespace CitiBot.Plugins.CookieGiver
 {
@@ -19,8 +18,6 @@ namespace CitiBot.Plugins.CookieGiver
         private Random m_random = new Random();
         private DateTime m_previousSend = DateTime.MinValue;
 
-        private Dictionary<string, int> m_delay_database = new Dictionary<string, int>();
-
         public CookieGiver()
         {
             Load();
@@ -28,7 +25,7 @@ namespace CitiBot.Plugins.CookieGiver
 
         public void Load()
         {
-
+            //Console.WriteLine("Database loaded with " + CookieFlavour.GetCookieCount());
         }
 
         public void OnMessage(TwitchClient client, TwitchMessage message)
@@ -58,6 +55,14 @@ namespace CitiBot.Plugins.CookieGiver
                 case "!cookierank":
                 case "!cookiecount":
                     DisplayCookieCount(client, message);
+                    break;
+                case "!send":
+                case "!give":
+                case "!sendcookie":
+                case "!givecookie":
+                case "!cookiesend":
+                case "!cookiegive":
+                    SendCookies(client, message);
                     break;
                 case "!cookiedelay":
                     ChangeCookieDelay(client, message);
@@ -90,8 +95,9 @@ namespace CitiBot.Plugins.CookieGiver
                     break;
 
             }
-            m_previousSend = DateTime.Now.AddMilliseconds(200); // Hardcoded limitation
+            m_previousSend = DateTime.Now.AddMilliseconds(100); // Hardcoded limitation
         }
+
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
         {
@@ -102,26 +108,27 @@ namespace CitiBot.Plugins.CookieGiver
             }
             if (message.UserType < TwitchUserTypes.Mod)
             {
-                client.SendMessage(message.Channel, "Sorry {0}, this command is for mods and above only.", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, this command is for mods and above only.", message.SenderDisplayName);
                 return;
             }
 
-            string msg = message.Message.Replace("\"", "");
-            if (msg.Length <= "!newcookie ".Length)
+            string msg = message.Message.Replace("\"", "").Trim();
+
+            if (msg.IndexOf(' ') == -1)
             {
-                client.SendMessage(message.Channel, "Please specify what you want to add in the cookie database");
+                client.SendWhisper(message.SenderName, "Please specify what you want to add in the cookie database");
                 return;
             }
 
-            string sub = msg.Substring("!newcookie ".Length);
+            string sub = msg.Substring(msg.IndexOf(' '));
             if (!sub.ToLowerInvariant().Contains("cookie"))
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but the new flavor must contain the word \"cookie\"", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but the new flavor must contain the word \"cookie\" (singular)", message.SenderDisplayName);
                 return;
             }
             if (!CheckAllowedCookie(sub))
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but you're not allowed to add this.", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you're not allowed to add this.", message.SenderDisplayName);
                 return;
             }
 
@@ -140,6 +147,7 @@ namespace CitiBot.Plugins.CookieGiver
         }
         private void ChangeCookieDelay(TwitchClient client, TwitchMessage message)
         {
+            var channel = message.Channel;
             if (message.UserType >= TwitchUserTypes.Broadcaster)
             {
                 string[] split = message.Message.Split(' ');
@@ -148,10 +156,25 @@ namespace CitiBot.Plugins.CookieGiver
                 {
                     if (time > 0)
                     {
-                        if (m_delay_database.ContainsKey(message.Channel))
-                            m_delay_database[message.Channel] = time;
+                        CookieDelay cookie_delay = CookieDelay.GetCookieDelay(channel);
+                        if (cookie_delay != null)
+                        {
+                            cookie_delay.Delay = time;
+                            cookie_delay.ChangedBy = message.SenderName;
+                            cookie_delay.ChangedLast = DateTime.Now;
+                            cookie_delay.Save();
+                        }
                         else
-                            m_delay_database.Add(message.Channel, time);
+                        {
+                            cookie_delay = new CookieDelay()
+                            {
+                                Delay = time,
+                                ChangedBy = message.SenderName,
+                                ChangedLast = DateTime.Now,
+                                Channel = channel
+                            };
+                            cookie_delay.Save();
+                        }
 
                         client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
                     }
@@ -159,7 +182,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
         private void DisplayCommands(TwitchClient client, TwitchMessage message)
@@ -262,7 +285,7 @@ namespace CitiBot.Plugins.CookieGiver
             bool allowedThroughWhisper = false;
             string target = message.SenderDisplayName;
             string channel = message.Channel;
-            string[] split = message.Message.Split(' ');
+            string[] split = message.Message.Split(' ');            
             if (split.Length > 1)
             {
                 // Sends the cookie to someone else. Usage : !cookie <target>
@@ -277,8 +300,13 @@ namespace CitiBot.Plugins.CookieGiver
                     channel = split[2];
                     allowedThroughWhisper = true;
                 }
+                // Sends defined amount of cookies to a target in the channel. Usage !cookie <target> <amount>
+                else if (message.UserType >= TwitchUserTypes.Citillara && int.TryParse(split[2], out forcedCookies))
+                {
+                    allowedThroughWhisper = false;
+                }
             }
-            if (split.Length > 3)
+            if (split.Length == 4)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel> <amount>
                 if (message.UserType >= TwitchUserTypes.Citillara)
@@ -307,13 +335,14 @@ namespace CitiBot.Plugins.CookieGiver
                     int delay_in_seconds = 60; // default;
 
                     // Channel may have custom delay
-                    if (m_delay_database.ContainsKey(message.Channel))
-                        delay_in_seconds = m_delay_database[message.Channel];
+                    int delay = CookieDelay.GetDelay(message.Channel);
+                    if (delay > 0)
+                        delay_in_seconds = delay;
 
                     // Sender is sending before the delay
                     if (sender_user_database.LastSend.HasValue && sender_user_database.LastSend.Value.AddSeconds(delay_in_seconds) > DateTime.Now)
                     {
-                        client.SendMessage(message.Channel, "Sorry {0} buy you can only get cookies every {1} seconds", message.SenderDisplayName, delay_in_seconds);
+                        client.SendWhisper(message.SenderName, "Sorry {0} but you can get/send cookies only every {1} seconds", message.SenderDisplayName, delay_in_seconds);
                         return; // Prevent him from sending
                     }
                 }
@@ -342,7 +371,16 @@ namespace CitiBot.Plugins.CookieGiver
             }
 
             // Select a cookie
-            var m_list_of_cookies_ids = CookieFlavour.GetChannelPossibleCookies(message.Channel);
+            IEnumerable<Int32> m_list_of_cookies_ids;
+            if (m_random.Next(0, 100) > 75)
+            {
+                m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
+            }
+            else
+            {
+                m_list_of_cookies_ids = CookieFlavour.GetChannelCookies(message.Channel);
+            }
+            
 
             int next = m_random.Next(0, m_list_of_cookies_ids.Count());
 
@@ -411,6 +449,47 @@ namespace CitiBot.Plugins.CookieGiver
             client.SendAction(channel, msg);
 
         }
+        private void SendCookies(TwitchClient client, TwitchMessage message)
+        {
+            var spl = message.Message.Split(' ');
+            int amount = 0;
+            int.TryParse(spl[2], out amount);
+            if (spl.Length != 3 && amount <= 0)
+            {
+                client.SendMessage(message.Channel, "Usage : !sendcookie <target> <amount>");
+                return;
+            }
+            var sender = CookieUser.GetUser(message.Channel, message.SenderName);
+            var target = CookieUser.GetUser(message.Channel, spl[1]);
+
+            if (sender == null || sender.CookieReceived < amount)
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you don't have enough cookies", message.SenderDisplayName);
+                return;
+            }
+
+            if (target == null)
+            {
+                target = new CookieUser()
+                {
+                    Username = spl[1],
+                    Channel = message.Channel,
+                    CookieReceived = amount
+                };
+                target.Save();
+            }
+            else
+            {
+                target.CookieReceived += amount;
+                target.Save();
+            }
+
+            sender.CookieReceived -= amount;
+            sender.Save();
+
+            client.SendMessage(message.Channel, "{0} gave {1} cookies to {2}", message.SenderDisplayName, amount, spl[1]);
+        }
+
 
         private void SendYoshi(TwitchClient client, TwitchMessage message)
         {
@@ -420,22 +499,22 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (split.Length < 2 || !int.TryParse(split[1], out bribe_amount) || bribe_amount <= 0)
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
                 return;
             }
             if (briber == null)
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
             if (bribe_amount > briber.CookieReceived)
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
             if (briber.LastYoshiBribe.HasValue && briber.LastYoshiBribe.Value.AddMinutes(10) > DateTime.Now)
             {
-                client.SendMessage(message.Channel, "Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
                 return;
             }
             int quantity = 0;
