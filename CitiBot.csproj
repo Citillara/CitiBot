@@ -70,13 +70,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CommandsManager.cs" />
     <Compile Include="Database\MySQLDatabase.cs" />
+    <Compile Include="IPlugin.cs" />
     <Compile Include="Plugins\CookieGiver\CookieGiver.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CaloriesPerActivity.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieBox.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieDelay.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieFlavour.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
+    <Compile Include="Plugins\GenericCommands\GenericCommands.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ToolBox.cs" />

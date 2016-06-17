@@ -11,7 +11,7 @@ using Twitch.Models;
 
 namespace CitiBot.Plugins.CookieGiver
 {
-    public class CookieGiver
+    public class CookieGiver : IPlugin
     {
 
         private const int CAL_PER_COOKIE = 31;
@@ -25,78 +25,40 @@ namespace CitiBot.Plugins.CookieGiver
 
         public void Load()
         {
-            //Console.WriteLine("Database loaded with " + CookieFlavour.GetCookieCount());
+            Console.WriteLine("Database loaded with " + CookieFlavour.GetCookieCount());
         }
 
-        public void OnMessage(TwitchClient client, TwitchMessage message)
+        public void Load(CommandsManager commandsManager)
         {
-            if (!message.Message.StartsWith("!"))
-                return;
-            // No more than delay (1s)
-            if (DateTime.Now < m_previousSend)
-            {
-                Console.WriteLine(message);
-                Console.WriteLine("Ignored, too fast");
-                return;
-            }
+            commandsManager.RegisterCommand("!cookie", GiveCookie);
+            commandsManager.RegisterCommand("!cookies", GiveCookie);
+            commandsManager.RegisterCommand("!welcomecookie", GiveCookie);
+            commandsManager.RegisterCommand("!lovecookie", GiveCookie);
+            commandsManager.RegisterCommand("!wrcookie", GiveCookie);
 
-            string msg = message.Message.Split(' ')[0];
+            commandsManager.RegisterCommand("!rank", DisplayCookieCount);
+            commandsManager.RegisterCommand("!cookierank", DisplayCookieCount);
+            commandsManager.RegisterCommand("!cookiecount", DisplayCookieCount);
 
-            switch (msg)
-            {
-                case "!cookie":
-                case "!cookies":
-                case "!welcomecookie":
-                case "!lovecookie":
-                case "!wrcookie":
-                    GiveCookie(client, message);
-                    break;
-                case "!rank":
-                case "!cookierank":
-                case "!cookiecount":
-                    DisplayCookieCount(client, message);
-                    break;
-                case "!send":
-                case "!give":
-                case "!sendcookie":
-                case "!givecookie":
-                case "!cookiesend":
-                case "!cookiegive":
-                    SendCookies(client, message);
-                    break;
-                case "!cookiedelay":
-                    ChangeCookieDelay(client, message);
-                    break;
-                case "!commands":
-                    DisplayCommands(client, message);
-                    break;
-                case "!help":
-                    DisplayHelp(client, message);
-                    break;
-                case "!addcookie":
-                case "!newcookie":
-                    AddCookieFlavor(client, message);
-                    break;
-                case "!dbcookiecount":
-                    DisplayDatabaseCookieCount(client, message);
-                    break;
-                case "!top5":
-                    DisplayTop(client, message, 5);
-                    break;
-                case "!top10":
-                    DisplayTop(client, message, 10);
-                    break;
-                case "!yoshi":
-                    SendYoshi(client, message);
-                    break;
-                default:
-                    Console.WriteLine(message);
-                    Console.WriteLine(msg);
-                    break;
+            commandsManager.RegisterCommand("!send", SendCookies);
+            commandsManager.RegisterCommand("!give", SendCookies);
+            commandsManager.RegisterCommand("!sendcookie", SendCookies);
+            commandsManager.RegisterCommand("!givecookie", SendCookies);
+            commandsManager.RegisterCommand("!cookiesend", SendCookies);
+            commandsManager.RegisterCommand("!cookiegive", SendCookies);
 
-            }
-            m_previousSend = DateTime.Now.AddMilliseconds(100); // Hardcoded limitation
+            commandsManager.RegisterCommand("!cookiedelay", ChangeCookieDelay);
+            commandsManager.RegisterCommand("!commands", DisplayCommands);
+            commandsManager.RegisterCommand("!help", DisplayHelp);
+
+            commandsManager.RegisterCommand("!addcookie", AddCookieFlavor);
+            commandsManager.RegisterCommand("!newcookie", AddCookieFlavor);
+
+            commandsManager.RegisterCommand("!dbcookiecount", DisplayDatabaseCookieCount);
+            commandsManager.RegisterCommand("!top10", DisplayTop10);
+            commandsManager.RegisterCommand("!yoshi", SendYoshi);
         }
+
 
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
@@ -254,6 +216,10 @@ namespace CitiBot.Plugins.CookieGiver
                 }
             }
         }
+        private void DisplayTop10(TwitchClient client, TwitchMessage message)
+        {
+            DisplayTop(client, message, 10);
+        }
         private void DisplayTop(TwitchClient client, TwitchMessage message, int count)
         {
             var top_10 = CookieUser.GetChannelTopUsers(message.Channel, count);
@@ -379,6 +345,8 @@ namespace CitiBot.Plugins.CookieGiver
             else
             {
                 m_list_of_cookies_ids = CookieFlavour.GetChannelCookies(message.Channel);
+                if (m_list_of_cookies_ids.Count() == 0)
+                    m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
             }
             
 

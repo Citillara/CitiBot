@@ -1,6 +1,7 @@
 ﻿using CitiBot.Plugins;
 using CitiBot.Plugins.CookieGiver;
 using CitiBot.Plugins.CookieGiver.Models;
+using CitiBot.Plugins.GenericCommands;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -33,11 +34,15 @@ namespace CitiBot
         string name = ConfigurationManager.ConnectionStrings["TwitchLogin"].ConnectionString;
         string password = ConfigurationManager.ConnectionStrings["TwitchPassword"].ConnectionString;
         TwitchClient client;
-        CookieGiver cookieGiver = new CookieGiver();
+        
         Regex r = new Regex(@"[^\u0000-\u007F]", RegexOptions.Compiled);
+
+        CommandsManager m_commandManager;
+
 
         void MainLoop()
         {
+            Load();
             client = new TwitchClient(name, password);
             client.OnMessage += client_OnMessage;
             client.OnPerform += client_OnPerform;
@@ -51,6 +56,13 @@ namespace CitiBot
             }
         }
 
+        void Load()
+        {
+            m_commandManager = new CommandsManager();
+            m_commandManager.AddPlugin(new CookieGiver());
+            m_commandManager.AddPlugin(new GenericCommands());
+            m_commandManager.LoadAllPlugins();
+        }
 
         void client_OnPart(TwitchClient sender, Twitch.Models.TwitchClientOnPartEventArgs args)
         {
@@ -60,9 +72,9 @@ namespace CitiBot
         void client_OnPerform(TwitchClient sender)
         {
             sender.Join("#citillara");
-            //sender.Join("#elbodykso");
+            sender.Join("#elbodykso");
             //sender.Join("#infoutlaw");
-            //sender.Join("#nickynoel");
+            sender.Join("#nickynoel");
             //sender.Join("#crumps2");
             //sender.Join("#twitch");
             //sender.Join("#ea");
@@ -78,71 +90,18 @@ namespace CitiBot
 
         void client_OnMessage(TwitchClient sender, TwitchMessage message)
         {
-            //Console.WriteLine(message);
-            if(DoGenericCommands(sender, message))
-                return;
-            cookieGiver.OnMessage(sender, message);
-            
-        }
-
-
-        bool DoGenericCommands(TwitchClient sender, TwitchMessage message)
-        {
-
-            if (!message.Message.StartsWith("!"))
-                return false;
-            var split = message.Message.Split(' ');
-            string msg = split[0];
-
-            switch (msg)
+            try
             {
-                case "!join" :
-                    if (message.UserType < TwitchUserTypes.BotMaster)
-                        sender.SendWhisper(message.SenderName, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
-                    else
-                        if (split.Length > 1)
-                            if (split[1].StartsWith("#"))
-                            {
-                                sender.Join(split[1]);
-                                sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", split[1], message.SenderDisplayName);
-                            }
-                            else
-                                sender.SendMessage(message.Channel, "Please specify a correct channel");
-                        else
-                        {
-                            sender.Join("#" + message.SenderName);
-                            sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", "#" + message.SenderName, message.SenderDisplayName);
-                        }
-                    return true;
-                case "!part":
-                    if (message.UserType < TwitchUserTypes.Broadcaster)
-                        sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Broadcaster and above", message.SenderDisplayName);
-                    else
-                    {
-                        sender.Part(message.Channel);
-                        sender.SendMessage("#citillara", "Parting {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
-                    }
-                    return true;
-                case "!pyramid":
-                    if (message.UserType < TwitchUserTypes.Citillara)
-                    {
-                        //sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Citillara", message.SenderDisplayName);
-                    }
-                    else
-                    {
-                        var icon = split[1] + " ";
-                        sender.SendMessage(message.Channel, icon);
-                        sender.SendMessage(message.Channel, icon + icon);
-                        sender.SendMessage(message.Channel, icon + icon + icon);
-                        sender.SendMessage(message.Channel, icon + icon + icon + icon);
-                        sender.SendMessage(message.Channel, icon + icon + icon);
-                        sender.SendMessage(message.Channel, icon + icon);
-                        sender.SendMessage(message.Channel, icon);
-                    }
-                    return true;
-                default: return false;
+                m_commandManager.OnMessage(sender, message);
+            }
+            catch (Exception e)
+            {
+                File.AppendAllText("error.log", e.ToString());
+                Console.WriteLine(e.ToString());
             }
         }
+
+
     }
 
     public static class Extensions
