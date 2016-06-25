@@ -35,6 +35,7 @@ namespace CitiBot.Plugins.CookieGiver
             commandsManager.RegisterCommand("!welcomecookie", GiveCookie);
             commandsManager.RegisterCommand("!lovecookie", GiveCookie);
             commandsManager.RegisterCommand("!wrcookie", GiveCookie);
+            commandsManager.RegisterCommand("!crashcookie", GiveCookie);
 
             commandsManager.RegisterCommand("!rank", DisplayCookieCount);
             commandsManager.RegisterCommand("!cookierank", DisplayCookieCount);
@@ -410,6 +411,8 @@ namespace CitiBot.Plugins.CookieGiver
                 flavor = "World Record cookie";
             else if (split[0].Contains("lovecookie"))
                 flavor = "cookie of Love";
+            else if (split[0].Contains("crashcookie"))
+                flavor = "crashing cookie";
 
             string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target, modifier);
             if (quantity > 1)
@@ -419,16 +422,15 @@ namespace CitiBot.Plugins.CookieGiver
         }
         private void SendCookies(TwitchClient client, TwitchMessage message)
         {
-            var spl = message.Message.Split(' ');
             int amount = 0;
-            int.TryParse(spl[2], out amount);
-            if (spl.Length != 3 && amount <= 0)
+
+            if (message.Args.Length < 3 || !int.TryParse(message.Args[2], out amount) || amount <= 0)
             {
                 client.SendMessage(message.Channel, "Usage : !sendcookie <target> <amount>");
                 return;
             }
             var sender = CookieUser.GetUser(message.Channel, message.SenderName);
-            var target = CookieUser.GetUser(message.Channel, spl[1]);
+            var target = CookieUser.GetUser(message.Channel, message.Args[1]);
 
             if (sender == null || sender.CookieReceived < amount)
             {
@@ -440,7 +442,7 @@ namespace CitiBot.Plugins.CookieGiver
             {
                 target = new CookieUser()
                 {
-                    Username = spl[1],
+                    Username = message.Args[1],
                     Channel = message.Channel,
                     CookieReceived = amount
                 };
@@ -455,17 +457,21 @@ namespace CitiBot.Plugins.CookieGiver
             sender.CookieReceived -= amount;
             sender.Save();
 
-            client.SendMessage(message.Channel, "{0} gave {1} cookies to {2}", message.SenderDisplayName, amount, spl[1]);
+            client.SendMessage(message.Channel, "{0} gave {1} cookies to {2}", message.SenderDisplayName, amount, message.Args[1]);
         }
 
 
         private void SendYoshi(TwitchClient client, TwitchMessage message)
         {
-            var split = message.Message.Split(' ');
             int bribe_amount = -1;
             var briber = CookieUser.GetUser(message.Channel, message.SenderName);
 
-            if (split.Length < 2 || !int.TryParse(split[1], out bribe_amount) || bribe_amount <= 0)
+            if (message.Args.Length < 3)
+            {
+                client.SendMessage(message.Channel, "Usage : !yoshi <target> <bribe_amount>");
+                return;
+            }
+            if (!int.TryParse(message.Args[2], out bribe_amount) || bribe_amount <= 0)
             {
                 client.SendWhisper(message.SenderName, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
                 return;
@@ -485,10 +491,8 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendWhisper(message.SenderName, "Sorry {0}, but you can only bribe Yoshi every 10 minutes", message.SenderDisplayName);
                 return;
             }
-            int quantity = 0;
-            quantity = m_random.Next(1, 3 * bribe_amount);
 
-            var user_array = CookieUser.GetChannelUserIdsWithCookies(message.Channel).ToArray();
+            /*var user_array = CookieUser.GetChannelUserIdsWithCookies(message.Channel).ToArray();
 
             if (user_array.Count() == 0)
             {
@@ -498,30 +502,58 @@ namespace CitiBot.Plugins.CookieGiver
             int index = m_random.Next(0, user_array.Count());
             int targetId = user_array[index];
 
+            var target = CookieUser.GetUser(targetId);*/
 
-            briber.CookieReceived -= bribe_amount;
+            var target = CookieUser.GetUser(message.Channel, message.Args[1].ToLowerInvariant());
+
+            if (target == null || target.CookieReceived <= 0)
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, but {1} doesn't have any cookies", message.SenderDisplayName, message.Args[1]);
+                return;
+            }
+
+            int quantity = 0;
+            quantity = m_random.Next(1, 3 * bribe_amount);
 
 
-            var target = CookieUser.GetUser(targetId);
+            if (target.Id == briber.Id)
+            {
+                briber.CookieReceived -= bribe_amount;
+                briber.CookieReceived -= quantity;
 
-            target.CookieReceived -= quantity;
-            // in case the target is also the briber we still have the initial amount of cookies so remove the bribe again
-            if (targetId == briber.Id)
-                target.CookieReceived -= bribe_amount;
+                if (briber.CookieReceived < 0)
+                    briber.CookieReceived = 0;
 
-            if (target.CookieReceived < 0)
-                target.CookieReceived = 0;
 
-            client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! He now has {3} cookies left",
-                message.SenderDisplayName,
-                quantity,
-                target.Username,
-                target.CookieReceived);
+                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! ({3} cookies left)",
+                    message.SenderDisplayName,
+                    quantity,
+                    briber.Username,
+                    briber.CookieReceived);
 
-            briber.LastYoshiBribe = DateTime.Now;
+                briber.LastYoshiBribe = DateTime.Now;
 
-            briber.Save();
-            target.Save();
+                briber.Save();
+            }
+            else
+            {
+                target.CookieReceived -= quantity;
+                briber.CookieReceived -= bribe_amount;
+
+                if (target.CookieReceived < 0)
+                    target.CookieReceived = 0;
+
+                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! ({3} cookies left)",
+                    message.SenderDisplayName,
+                    quantity,
+                    target.Username,
+                    target.CookieReceived);
+
+                briber.LastYoshiBribe = DateTime.Now;
+
+                briber.Save();
+                target.Save();
+            }
         }
 
         public static string Ranking(int number)

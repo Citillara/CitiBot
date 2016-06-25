@@ -96,6 +96,8 @@ namespace CitiBot
             }
             catch (Exception e)
             {
+                File.AppendAllText("error.log", message.ToString());
+                Console.WriteLine(message);
                 File.AppendAllText("error.log", e.ToString());
                 Console.WriteLine(e.ToString());
             }
