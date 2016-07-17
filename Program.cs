@@ -36,6 +36,7 @@ namespace CitiBot
         TwitchClient client;
         
         Regex r = new Regex(@"[^\u0000-\u007F]", RegexOptions.Compiled);
+        public static Dictionary<string, List<string>> Channels = new Dictionary<string, List<string>>();
 
         CommandsManager m_commandManager;
 
@@ -47,13 +48,23 @@ namespace CitiBot
             client.OnMessage += client_OnMessage;
             client.OnPerform += client_OnPerform;
             client.OnPart += client_OnPart;
+            client.OnJoin += client_OnJoin;
             client.AutoDetectSendWhispers = true;
+            client.LogLevel = Irc.MessageLevel.Info;
             client.Connect();
 
             while (true)
             {
                 string line = Console.ReadLine();
             }
+        }
+
+        void client_OnJoin(TwitchClient sender, TwitchClientOnJoinEventArgs args)
+        {
+            if (!Channels.ContainsKey(args.Channel))
+                Channels.Add(args.Channel, new List<string>());
+            if (!Channels[args.Channel].Contains(args.Name))
+                Channels[args.Channel].Add(args.Name);
         }
 
         void Load()
@@ -66,7 +77,9 @@ namespace CitiBot
 
         void client_OnPart(TwitchClient sender, Twitch.Models.TwitchClientOnPartEventArgs args)
         {
-
+            if (Channels.ContainsKey(args.Channel))
+                if (Channels[args.Channel].Contains(args.Name))
+                    Channels[args.Channel].Remove(args.Name);
         }
 
         void client_OnPerform(TwitchClient sender)
@@ -80,6 +93,7 @@ namespace CitiBot
             //sender.Join("#ea");
 
             //sender.Join("#mlg");
+            //sender.Join("#dansgaming");
             /*
             sender.Join("#daopa");
             sender.Join("#zarvoxtoral");
@@ -92,7 +106,9 @@ namespace CitiBot
         {
             try
             {
+                //Console.WriteLine(message);
                 m_commandManager.OnMessage(sender, message);
+                DoMisc(sender, message);
             }
             catch (Exception e)
             {
@@ -102,8 +118,42 @@ namespace CitiBot
                 Console.WriteLine(e.ToString());
             }
         }
+        int progress = 0;
+        void DoMisc(TwitchClient sender, TwitchMessage message)
+        {
 
+            if (message.Message.Equals("Prepare for trouble!"))
+            {
+                sender.SendMessage(message.Channel, "Make it double!");
+                progress = 1;
+            }
+            else if (progress == 1 && message.Message.Equals("To protect the world from devastation!"))
+            {
+                sender.SendMessage(message.Channel, "To unite all peoples within our nation!");
+                progress = 2;
+            }
+            else if (progress == 2 && message.Message.Equals("To denounce the evils of truth and love!"))
+            {
+                sender.SendMessage(message.Channel, "To extend our reach to the stars above!");
+                progress = 3;
+            }
+            else if (progress == 3 && message.Message.Equals("Jessie!"))
+            {
+                sender.SendMessage(message.Channel, "James!");
+                progress = 4;
+            }
+            else if (progress == 4 && message.Message.Equals("Team Rocket, blast off at the speed of light!"))
+            {
+                sender.SendMessage(message.Channel, "Surrender now, or prepare to fight!");
+                progress = 5;
+            }
+            else if (progress == 5 && message.Message.Equals("Meowth!"))
+            {
+                sender.SendMessage(message.Channel, "That's right!");
+                progress = 0;
+            }
 
+        }
     }
 
     public static class Extensions

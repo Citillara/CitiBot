@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Twitch;
 using Twitch.Models;
@@ -58,6 +59,9 @@ namespace CitiBot.Plugins.CookieGiver
             commandsManager.RegisterCommand("!dbcookiecount", DisplayDatabaseCookieCount);
             commandsManager.RegisterCommand("!top10", DisplayTop10);
             commandsManager.RegisterCommand("!yoshi", SendYoshi);
+
+
+            commandsManager.RegisterCommand("!cookietime", CookieTime);
         }
 
 
@@ -525,7 +529,7 @@ namespace CitiBot.Plugins.CookieGiver
                     briber.CookieReceived = 0;
 
 
-                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! ({3} cookies left)",
+                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devoured {1} cookies of {2} ! ({3} cookies left)",
                     message.SenderDisplayName,
                     quantity,
                     briber.Username,
@@ -543,7 +547,7 @@ namespace CitiBot.Plugins.CookieGiver
                 if (target.CookieReceived < 0)
                     target.CookieReceived = 0;
 
-                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devored {1} cookies of {2} ! ({3} cookies left)",
+                client.SendMessage(message.Channel, "{0} bribed Yoshi, who devoured {1} cookies of {2} ! ({3} cookies left)",
                     message.SenderDisplayName,
                     quantity,
                     target.Username,
@@ -553,6 +557,24 @@ namespace CitiBot.Plugins.CookieGiver
 
                 briber.Save();
                 target.Save();
+            }
+        }
+        private void CookieTime(TwitchClient client, TwitchMessage message)
+        {
+            if (message.UserType >= TwitchUserTypes.Citillara)
+            {
+                foreach (var user in Program.Channels[message.Channel])
+                {
+                    GiveCookie(client, new TwitchMessage()
+                    {
+                        SenderName = "citillara",
+                        UserType = TwitchUserTypes.Citillara,
+                        Channel = message.Channel,
+                        Message = "!cookie " + user,
+                        SenderDisplayName = "Citillara"
+                    });
+                    Thread.Sleep(200);
+                }
             }
         }
 

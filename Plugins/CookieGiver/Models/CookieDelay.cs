@@ -27,7 +27,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public static int GetDelay(string channel)
         {
-            var entry = Database.Instance.CookieDelays.Where(d => d.Channel == channel).First();
+            var entry = Database.Instance.CookieDelays.Where(d => d.Channel == channel).FirstOrDefault();
             if (entry == null)
                 return -1;
             return entry.Delay;

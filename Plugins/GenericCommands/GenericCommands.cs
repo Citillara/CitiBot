@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Twitch;
 using Twitch.Models;
@@ -10,11 +11,19 @@ namespace CitiBot.Plugins.GenericCommands
 {
     public class GenericCommands : IPlugin
     {
+        public const string TWITCH_URL = "https://twitch.tv/";
+        public const int RAID_REPEAT = 4;
+        private Dictionary<string, string> m_raidMessages = new Dictionary<string, string>();
+
+
         public void Load(CommandsManager commandsManager)
         {
             commandsManager.RegisterCommand("!join", DoJoin);
             commandsManager.RegisterCommand("!part", DoPart);
             commandsManager.RegisterCommand("!pyramid", DoPyramid);
+            commandsManager.RegisterCommand("!count", DoCount);
+            commandsManager.RegisterCommand("!raid", DoRaid);
+            commandsManager.RegisterCommand("!raidmessage", DoRaidMessage);
         }
 
         public void DoJoin(TwitchClient sender, TwitchMessage message)
@@ -75,6 +84,52 @@ namespace CitiBot.Plugins.GenericCommands
                 sender.SendMessage(message.Channel, icon);
             }
         }
+        public void DoCount(TwitchClient sender, TwitchMessage message)
+        {
+
+            if (message.UserType >= TwitchUserTypes.Citillara)
+            {
+                sender.SendMessage(message.Channel, message.Args[1] + " = " + Program.Channels[message.Args[1]].Count().ToString());
+            }
+        }
+        
+        public void DoRaid(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.UserType >= TwitchUserTypes.Broadcaster)
+            {
+                if (message.Args.Length > 1)
+                {
+                    if (m_raidMessages.ContainsKey(message.Channel) && !String.IsNullOrEmpty(m_raidMessages[message.Channel]))
+                    {
+                        RepeatAction(RAID_REPEAT, () => sender.SendMessage(message.Channel, m_raidMessages[message.Channel]));
+                    }
+                    RepeatAction(RAID_REPEAT, () => sender.SendMessage(message.Channel, TWITCH_URL + message.Args[1].ToLowerInvariant()));
+                }
+            }
+        }
+
+        public void DoRaidMessage(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.UserType >= TwitchUserTypes.Broadcaster)
+            {
+                if (message.Args.Length > 1)
+                {
+                    string msg = message.Message.Substring(message.Args[0].Length + 1).Trim();
+                    m_raidMessages[message.Channel] = msg;
+                    sender.SendMessage(message.Channel, "Raid message has been set to : " + msg);
+                }
+            }
+        }
+
+        public static void RepeatAction(int repeatCount, Action action, int delay = 200)
+        {
+            for (int i = 0; i < repeatCount; i++)
+            {
+                Thread.Sleep(delay);
+                action();
+            }
+        }
+
     }
 
 }
