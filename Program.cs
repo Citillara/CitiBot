@@ -44,6 +44,29 @@ namespace CitiBot
         void MainLoop()
         {
             Load();
+            /*
+            while (true)
+            {
+                string line = Console.ReadLine();
+            }*/
+            Connect();
+        }
+        int attemps = 0;
+        private void Client_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
+        {
+            if (attemps < 3 && !wasManualDisconnect)
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine("There was a disconnect");
+                Console.ForegroundColor = ConsoleColor.Gray;
+                attemps++;
+                Connect();
+            }
+        }
+
+        void Connect()
+        {
+
             client = new TwitchClient(name, password);
             client.OnMessage += client_OnMessage;
             client.OnPerform += client_OnPerform;
@@ -51,12 +74,8 @@ namespace CitiBot
             client.OnJoin += client_OnJoin;
             client.AutoDetectSendWhispers = true;
             client.LogLevel = Irc.MessageLevel.Info;
+            client.OnDisconnect += Client_OnDisconnect;
             client.Connect();
-
-            while (true)
-            {
-                string line = Console.ReadLine();
-            }
         }
 
         void client_OnJoin(TwitchClient sender, TwitchClientOnJoinEventArgs args)
@@ -65,6 +84,10 @@ namespace CitiBot
                 Channels.Add(args.Channel, new List<string>());
             if (!Channels[args.Channel].Contains(args.Name))
                 Channels[args.Channel].Add(args.Name);
+            if (args.Channel == "#citillara" && args.Name.ToLowerInvariant() == "citibot")
+            {
+                sender.SendMessage("#citillara", "Joined");
+            }
         }
 
         void Load()

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [DataContract]
+    [Table("cookieboxes")]
     public class CookieBox
     {
         [DataMember]

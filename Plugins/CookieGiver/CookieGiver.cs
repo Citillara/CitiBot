@@ -266,7 +266,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (split.Length > 2)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel>
-                if (message.UserType >= TwitchUserTypes.BotMaster && split[2].StartsWith("#"))
+                if (message.UserType >= TwitchUserTypes.Developper && split[2].StartsWith("#"))
                 {
                     channel = split[2];
                     allowedThroughWhisper = true;

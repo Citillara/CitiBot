@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [DataContract]
+    [Table("cookieflavours")]
     public class CookieFlavour
     {
         [DataMember]

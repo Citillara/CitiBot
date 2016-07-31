@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [DataContract]
+    [Table("cookieusers")]
     public class CookieUser
     {
 
@@ -21,6 +22,8 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual int Id { get; set; }
         [DataMember]
         public virtual int CookieReceived { get; set; }
+        [DataMember]
+        public virtual int TopCookieCount { get; set; }
         [DataMember]
         public virtual DateTime? LastReceived { get; set; }
         [DataMember]
@@ -88,6 +91,9 @@ namespace CitiBot.Plugins.CookieGiver.Models
                 this.LastSend = null;
             if (this.LastYoshiBribe == DateTime.MinValue)
                 this.LastYoshiBribe = null;
+
+            if (this.CookieReceived > this.TopCookieCount)
+                this.TopCookieCount = this.CookieReceived;
 
 
             if (db.CookieUsers.Any(e => e.Id == id))
