@@ -75,7 +75,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             if (message.UserType < TwitchUserTypes.Mod)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, this command is for mods and above only.", message.SenderDisplayName);
+                client.SendWhisper(message.SenderName, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
                 return;
             }
 
@@ -83,7 +83,7 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (msg.IndexOf(' ') == -1)
             {
-                client.SendWhisper(message.SenderName, "Please specify what you want to add in the cookie database");
+                client.SendWhisper(message.SenderName, "Please specify what you want to add to the cookie database");
                 return;
             }
 
@@ -211,10 +211,10 @@ namespace CitiBot.Plugins.CookieGiver
                         client.SendMessage(message.Channel, "Gives a random topic. Usage : !randomtopic");
                         break;
                     case "commands":
-                        client.SendMessage(message.Channel, "Displays the list of availible commands. Usage : !commands");
+                        client.SendMessage(message.Channel, "Displays the list of available commands. Usage : !commands");
                         break;
                     case "help":
-                        client.SendMessage(message.Channel, "Displays help on a command. Usage : !help <command>");
+                        client.SendMessage(message.Channel, "Displays help for a command. Usage : !help <command>");
                         break;
                     default: Console.WriteLine(command);
                         break;
@@ -402,7 +402,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (quantity > 40)
                 modifier = ". Incredible !";
             else if (quantity > 20)
-                modifier = ". Awsome !";
+                modifier = ". Awesome !";
             else if (quantity > 10)
                 modifier = ". Not bad !";
 
