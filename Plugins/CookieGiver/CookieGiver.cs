@@ -1,4 +1,6 @@
-﻿using CitiBot.Plugins.CookieGiver.Models;
+﻿using CitiBot.Main;
+using CitiBot.Plugins.CookieGiver.Models;
+using CitiBot.Plugins.Twitch.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,39 +31,35 @@ namespace CitiBot.Plugins.CookieGiver
             Console.WriteLine("Database loaded with " + CookieFlavour.GetCookieCount());
         }
 
-        public void Load(CommandsManager commandsManager)
+        public void OnLoad(PluginManager pluginManager)
         {
-            commandsManager.RegisterCommand("!cookie", GiveCookie);
-            commandsManager.RegisterCommand("!cookies", GiveCookie);
-            commandsManager.RegisterCommand("!welcomecookie", GiveCookie);
-            commandsManager.RegisterCommand("!lovecookie", GiveCookie);
-            commandsManager.RegisterCommand("!wrcookie", GiveCookie);
-            commandsManager.RegisterCommand("!crashcookie", GiveCookie);
+            pluginManager.RegisterCommand("!cookie", GiveCookie);
+            pluginManager.RegisterCommand("!cookies", GiveCookie);
+            pluginManager.RegisterCommand("!welcomecookie", GiveCookie);
+            pluginManager.RegisterCommand("!lovecookie", GiveCookie);
+            pluginManager.RegisterCommand("!wrcookie", GiveCookie);
+            pluginManager.RegisterCommand("!crashcookie", GiveCookie);
 
-            commandsManager.RegisterCommand("!rank", DisplayCookieCount);
-            commandsManager.RegisterCommand("!cookierank", DisplayCookieCount);
-            commandsManager.RegisterCommand("!cookiecount", DisplayCookieCount);
+            pluginManager.RegisterCommand("!rank", DisplayCookieCount);
+            pluginManager.RegisterCommand("!cookierank", DisplayCookieCount);
+            pluginManager.RegisterCommand("!cookiecount", DisplayCookieCount);
 
-            commandsManager.RegisterCommand("!send", SendCookies);
-            commandsManager.RegisterCommand("!give", SendCookies);
-            commandsManager.RegisterCommand("!sendcookie", SendCookies);
-            commandsManager.RegisterCommand("!givecookie", SendCookies);
-            commandsManager.RegisterCommand("!cookiesend", SendCookies);
-            commandsManager.RegisterCommand("!cookiegive", SendCookies);
+            pluginManager.RegisterCommand("!sendcookie", SendCookies);
+            pluginManager.RegisterCommand("!givecookie", SendCookies);
+            pluginManager.RegisterCommand("!cookiesend", SendCookies);
+            pluginManager.RegisterCommand("!cookiegive", SendCookies);
 
-            commandsManager.RegisterCommand("!cookiedelay", ChangeCookieDelay);
-            commandsManager.RegisterCommand("!commands", DisplayCommands);
-            commandsManager.RegisterCommand("!help", DisplayHelp);
+            pluginManager.RegisterCommand("!cookiedelay", ChangeCookieDelay);
+            pluginManager.RegisterCommand("!commands", DisplayCommands);
+            pluginManager.RegisterCommand("!help", DisplayHelp);
 
-            commandsManager.RegisterCommand("!addcookie", AddCookieFlavor);
-            commandsManager.RegisterCommand("!newcookie", AddCookieFlavor);
+            pluginManager.RegisterCommand("!addcookie", AddCookieFlavor);
+            pluginManager.RegisterCommand("!newcookie", AddCookieFlavor);
 
-            commandsManager.RegisterCommand("!dbcookiecount", DisplayDatabaseCookieCount);
-            commandsManager.RegisterCommand("!top10", DisplayTop10);
-            commandsManager.RegisterCommand("!yoshi", SendYoshi);
+            pluginManager.RegisterCommand("!dbcookiecount", DisplayDatabaseCookieCount);
+            pluginManager.RegisterCommand("!top10", DisplayTop10);
+            pluginManager.RegisterCommand("!yoshi", SendYoshi);
 
-
-            commandsManager.RegisterCommand("!cookietime", CookieTime);
         }
 
 
@@ -123,25 +121,7 @@ namespace CitiBot.Plugins.CookieGiver
                 {
                     if (time > 0)
                     {
-                        CookieDelay cookie_delay = CookieDelay.GetCookieDelay(channel);
-                        if (cookie_delay != null)
-                        {
-                            cookie_delay.Delay = time;
-                            cookie_delay.ChangedBy = message.SenderName;
-                            cookie_delay.ChangedLast = DateTime.Now;
-                            cookie_delay.Save();
-                        }
-                        else
-                        {
-                            cookie_delay = new CookieDelay()
-                            {
-                                Delay = time,
-                                ChangedBy = message.SenderName,
-                                ChangedLast = DateTime.Now,
-                                Channel = channel
-                            };
-                            cookie_delay.Save();
-                        }
+                        CookieChannel.SetCookieDelay(channel, time);
 
                         client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
                     }
@@ -168,7 +148,7 @@ namespace CitiBot.Plugins.CookieGiver
                 var number_of_users = CookieUser.GetChannelUserCount(channel);
 
                 int cookies = user.CookieReceived;
-                client.SendMessage(message.Channel, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
+                client.SendWhisper(message.SenderName, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
                     message.SenderDisplayName,
                     user.CookieReceived,
                     Ranking(ranking),
@@ -233,7 +213,7 @@ namespace CitiBot.Plugins.CookieGiver
                          orderby db.CookieReceived descending
                          select new
                          {
-                             Key = db.Username,
+                             Key = db.DisplayName ?? db.Username,
                              Rank = (from dbb in top_10
                                      where dbb.CookieReceived > db.CookieReceived
                                      select dbb).Count() + 1,
@@ -306,7 +286,7 @@ namespace CitiBot.Plugins.CookieGiver
                     int delay_in_seconds = 60; // default;
 
                     // Channel may have custom delay
-                    int delay = CookieDelay.GetDelay(message.Channel);
+                    int delay = CookieChannel.GetDelay(message.Channel);
                     if (delay > 0)
                         delay_in_seconds = delay;
 
@@ -417,6 +397,8 @@ namespace CitiBot.Plugins.CookieGiver
                 flavor = "cookie of Love";
             else if (split[0].Contains("crashcookie"))
                 flavor = "crashing cookie";
+
+            var target_twitch = TwitchUser.GetUser(target.ToLowerInvariant());
 
             string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target, modifier);
             if (quantity > 1)
@@ -557,24 +539,6 @@ namespace CitiBot.Plugins.CookieGiver
 
                 briber.Save();
                 target.Save();
-            }
-        }
-        private void CookieTime(TwitchClient client, TwitchMessage message)
-        {
-            if (message.UserType >= TwitchUserTypes.Citillara)
-            {
-                foreach (var user in Program.Channels[message.Channel])
-                {
-                    GiveCookie(client, new TwitchMessage()
-                    {
-                        SenderName = "citillara",
-                        UserType = TwitchUserTypes.Citillara,
-                        Channel = message.Channel,
-                        Message = "!cookie " + user,
-                        SenderDisplayName = "Citillara"
-                    });
-                    Thread.Sleep(200);
-                }
             }
         }
 

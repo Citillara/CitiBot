@@ -1,5 +1,4 @@
-﻿using CitiBot.Plugins.CookieGiver.Models;
-using MySql.Data.Entity;
+﻿using MySql.Data.Entity;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -9,39 +8,37 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CitiBot
+namespace CitiBot.Database
 {
 
     [DbConfigurationType(typeof(MySqlEFConfiguration))]
-    public class Database : DbContext
+    public partial class Registry : DbContext
     {
         private static readonly string ConnectionString = ConfigurationManager.ConnectionStrings["Database"].ConnectionString;
 
-        public Database()
+        public Registry()
             : base(ConnectionString)
-        {}
+        {
+            //this.Database.Log = Console.WriteLine;
+        }
 
 
-        public Database(DbConnection existingConnection, bool contextOwnsConnection)
+        public Registry(DbConnection existingConnection, bool contextOwnsConnection)
             : base(existingConnection, contextOwnsConnection)
-        {}
+        {
+            
+        }
 
-        private static Database m_instance;
-        public static Database Instance
+        private static Registry m_instance;
+        public static Registry Instance
         {
             get
             {
                 if (m_instance == null)
-                    m_instance = new Database();
-
+                    m_instance = new Registry();
                 return m_instance;
             }
         }
 
-        public DbSet<CookieUser> CookieUsers { get; set; }
-        public DbSet<CookieFlavour> CookieFlavours { get; set; }
-        public DbSet<CaloriesPerActivity> CaloriesPerActivity { get; set; }
-        public DbSet<CookieDelay> CookieDelays { get; set; }
-        public DbSet<CookieBox> CookieBoxes { get; set; }
     }
 }

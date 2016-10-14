@@ -6,15 +6,23 @@ using System.Threading.Tasks;
 using Twitch;
 using Twitch.Models;
 
-namespace CitiBot
+namespace CitiBot.Main
 {
-    public class CommandsManager
+    public class PluginManager
     {
+        private static Dictionary<string, Type> m_availablePlugins = new Dictionary<string, Type>()
+        { 
+            { "GenericCommands", typeof(CitiBot.Plugins.GenericCommands.GenericCommands) },
+            { "CookieGiver", typeof(CitiBot.Plugins.CookieGiver.CookieGiver) },
+            { "Dog", typeof(CitiBot.Plugins.Dog.Dog) },
+
+        };
+
         private Dictionary<string, Action<TwitchClient, TwitchMessage>> m_commands;
 
         private List<IPlugin> m_plugins;
 
-        public CommandsManager()
+        public PluginManager()
         {
             m_commands = new Dictionary<string, Action<TwitchClient, TwitchMessage>>();
             m_plugins = new List<IPlugin>();
@@ -22,13 +30,14 @@ namespace CitiBot
 
         public void LoadAllPlugins()
         {
-            m_plugins.ForEach(p => p.Load(this));
+            m_plugins.ForEach(p => p.OnLoad(this));
         }
 
 
-        public void AddPlugin(IPlugin plugin)
+        public void AddPlugin(string plugin)
         {
-            m_plugins.Add(plugin);
+            IPlugin p = (IPlugin)Activator.CreateInstance(m_availablePlugins[plugin]);
+            m_plugins.Add(p);
         }
 
         public void RegisterCommand(string command, Action<TwitchClient, TwitchMessage> action)

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CitiBot.Database;
+using CitiBot.Plugins.Twitch.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -11,50 +13,64 @@ using System.Threading.Tasks;
 
 namespace CitiBot.Plugins.CookieGiver.Models
 {
-    [DataContract]
-    [Table("cookieusers")]
+    [Table("t_cookie_users")]
     public class CookieUser
     {
 
-        [DataMember]
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
-        [DataMember]
         public virtual int CookieReceived { get; set; }
-        [DataMember]
         public virtual int TopCookieCount { get; set; }
-        [DataMember]
         public virtual DateTime? LastReceived { get; set; }
-        [DataMember]
         public virtual DateTime? LastYoshiBribe { get; set; }
-        [DataMember]
         public virtual DateTime? LastSend { get; set; }
-        [DataMember]
         public virtual string Username { get; set; }
-        [DataMember]
         public virtual string Channel { get; set; }
+
+        [NotMapped]
+        public string DisplayName { get; set; }
+
+        public CookieUser()
+        {
+        }
+
+        public static CookieUser New(CookieUser user, string displayName = null)
+        {
+            return new CookieUser()
+            {
+                Channel = user.Channel,
+                CookieReceived = user.CookieReceived,
+                DisplayName = displayName,
+                Id = user.Id,
+                LastReceived = user.LastReceived,
+                LastSend = user.LastSend,
+                LastYoshiBribe = user.LastYoshiBribe,
+                TopCookieCount = user.TopCookieCount,
+                Username = user.Username
+            };
+        }
 
         public static CookieUser GetUser(string channel, string username)
         {
-            return Database.Instance.CookieUsers.Where(c => c.Channel == channel && c.Username == username).FirstOrDefault();
+            return Registry.Instance.CookieUsers.Where(c => c.Channel == channel && c.Username == username).FirstOrDefault();
         }
 
         public static CookieUser GetUser(int id)
         {
-            return Database.Instance.CookieUsers.Where(c => c.Id == id).FirstOrDefault();
+            return Registry.Instance.CookieUsers.Where(c => c.Id == id).FirstOrDefault();
         }
 
 
         public static int GetUserRankingInChannel(string channel, string username)
         {
-            var sorted = from db in Database.Instance.CookieUsers
+            var sorted = from db in Registry.Instance.CookieUsers
                          orderby db.CookieReceived descending
                          where db.Channel == channel
                          select new
                          {
                              Username = db.Username,
-                             Rank = (from dbb in Database.Instance.CookieUsers
+                             Rank = (from dbb in Registry.Instance.CookieUsers
                                      where dbb.CookieReceived > db.CookieReceived
                                      where dbb.Channel == channel
                                      select dbb).Count() + 1
@@ -68,21 +84,31 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public static int GetChannelUserCount(string channel)
         {
-            return Database.Instance.CookieUsers.Count(c => c.Channel == channel);
+            return Registry.Instance.CookieUsers.Count(c => c.Channel == channel);
         }
         public static IEnumerable<CookieUser> GetChannelTopUsers(string channel, int count)
         {
-            return Database.Instance.CookieUsers.Where(c => c.Channel == channel).OrderByDescending(c => c.CookieReceived).Take(count);
+
+            var result = from db in Registry.Instance.CookieUsers
+                         where db.Channel == channel
+                         join tu in Registry.Instance.TwitchUsers on db.Username equals tu.Name into joined
+                         from subtu in joined.DefaultIfEmpty()
+                         orderby db.CookieReceived descending
+                         select new { db, subtu };
+            var take = result.Take(count);
+            var list = new List<CookieUser>(take.Count());
+            take.ToList().ForEach(e => list.Add(New(e.db, e.subtu == null ? null : e.subtu.DisplayName)));
+            return list;
         }
         public static IEnumerable<Int32> GetChannelUserIdsWithCookies(string channel)
         {
-            return Database.Instance.CookieUsers.Where(c => c.Channel == channel && c.CookieReceived > 0).Select(c => c.Id);
+            return Registry.Instance.CookieUsers.Where(c => c.Channel == channel && c.CookieReceived > 0).Select(c => c.Id);
         }
 
         public virtual void Save()
         {
 
-            var db = Database.Instance;
+            var db = Registry.Instance;
             var id = this.Id;
 
             if (this.LastReceived == DateTime.MinValue)

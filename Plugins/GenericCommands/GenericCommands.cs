@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CitiBot.Main;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,24 +19,23 @@ namespace CitiBot.Plugins.GenericCommands
         private DateTime m_startTime = DateTime.Now;
 
 
-        public void Load(CommandsManager commandsManager)
+        public void OnLoad(PluginManager pluginManager)
         {
-            commandsManager.RegisterCommand("!join", DoJoin);
-            commandsManager.RegisterCommand("!part", DoPart);
-            commandsManager.RegisterCommand("!pyramid", DoPyramid);
-            commandsManager.RegisterCommand("!count", DoCount);
-            commandsManager.RegisterCommand("!raid", DoRaid);
-            commandsManager.RegisterCommand("!raidmessage", DoRaidMessage);
-            commandsManager.RegisterCommand("!d2", DoRoll);
-            commandsManager.RegisterCommand("!d4", DoRoll);
-            commandsManager.RegisterCommand("!d6", DoRoll);
-            commandsManager.RegisterCommand("!d8", DoRoll);
-            commandsManager.RegisterCommand("!d10", DoRoll);
-            commandsManager.RegisterCommand("!d12", DoRoll);
-            commandsManager.RegisterCommand("!d20", DoRoll);
-            commandsManager.RegisterCommand("!d100", DoRoll);
-            commandsManager.RegisterCommand("!roll", DoRoll);
-            commandsManager.RegisterCommand("!uptime", DoUptime);
+            pluginManager.RegisterCommand("!join", DoJoin);
+            pluginManager.RegisterCommand("!part", DoPart);
+            pluginManager.RegisterCommand("!pyramid", DoPyramid);
+            pluginManager.RegisterCommand("!raid", DoRaid);
+            pluginManager.RegisterCommand("!raidmessage", DoRaidMessage);
+            pluginManager.RegisterCommand("!d2", DoRoll);
+            pluginManager.RegisterCommand("!d4", DoRoll);
+            pluginManager.RegisterCommand("!d6", DoRoll);
+            pluginManager.RegisterCommand("!d8", DoRoll);
+            pluginManager.RegisterCommand("!d10", DoRoll);
+            pluginManager.RegisterCommand("!d12", DoRoll);
+            pluginManager.RegisterCommand("!d20", DoRoll);
+            pluginManager.RegisterCommand("!d100", DoRoll);
+            pluginManager.RegisterCommand("!roll", DoRoll);
+            pluginManager.RegisterCommand("!uptime", DoUptime);
         }
 
         public void DoJoin(TwitchClient sender, TwitchMessage message)
@@ -96,15 +96,6 @@ namespace CitiBot.Plugins.GenericCommands
                 sender.SendMessage(message.Channel, icon);
             }
         }
-        public void DoCount(TwitchClient sender, TwitchMessage message)
-        {
-
-            if (message.UserType >= TwitchUserTypes.Citillara)
-            {
-                sender.SendMessage(message.Channel, message.Args[1] + " = " + Program.Channels[message.Args[1]].Count().ToString());
-            }
-        }
-
         public void DoRaid(TwitchClient sender, TwitchMessage message)
         {
             if (message.UserType >= TwitchUserTypes.Broadcaster)
@@ -119,7 +110,6 @@ namespace CitiBot.Plugins.GenericCommands
                 }
             }
         }
-
         public void DoRaidMessage(TwitchClient sender, TwitchMessage message)
         {
             if (message.UserType >= TwitchUserTypes.Broadcaster)
@@ -132,16 +122,6 @@ namespace CitiBot.Plugins.GenericCommands
                 }
             }
         }
-
-        public static void RepeatAction(int repeatCount, Action action, int delay = 200)
-        {
-            for (int i = 0; i < repeatCount; i++)
-            {
-                Thread.Sleep(delay);
-                action();
-            }
-        }
-
         public void DoRoll(TwitchClient sender, TwitchMessage message)
         {
             int roll = 0;
@@ -164,11 +144,19 @@ namespace CitiBot.Plugins.GenericCommands
             sender.AutoDetectSendWhispers = true;
             sender.SendMessage(message.Channel, string.Format("{0} rolls a {1}", message.SenderDisplayName, m_random.Next(1, roll + 1)));
         }
-
         public void DoUptime(TwitchClient sender, TwitchMessage message)
         {
             var d = new TimeSpan(DateTime.Now.Ticks - m_startTime.Ticks);
             sender.SendMessage(message.Channel, "{0}d {1}h {2}m {3}s", d.Days, d.Hours, d.Minutes, d.Seconds);
+        }
+
+        private static void RepeatAction(int repeatCount, Action action, int delay = 200)
+        {
+            for (int i = 0; i < repeatCount; i++)
+            {
+                Thread.Sleep(delay);
+                action();
+            }
         }
     }
 

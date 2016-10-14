@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Serialization;
 
-namespace CitiBot
+namespace CitiBot.Main
 {
     public static class ToolBox
     {
