@@ -43,6 +43,7 @@ namespace CitiBot.Database
                 .WithMany(s => s.Plugins)
                 .Map(x => x.MapKey("BotId"));
 
+
         }
     }
 }

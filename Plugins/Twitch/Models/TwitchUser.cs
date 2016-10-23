@@ -31,7 +31,6 @@ namespace CitiBot.Plugins.Twitch.Models
         {
             return Registry.Instance.TwitchUsers.Where(c => c.Id == id).FirstOrDefault();
         }
-
         
         public virtual void Save()
         {

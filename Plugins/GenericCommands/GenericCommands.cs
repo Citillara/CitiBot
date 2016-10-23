@@ -35,6 +35,7 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand("!d20", DoRoll);
             pluginManager.RegisterCommand("!d100", DoRoll);
             pluginManager.RegisterCommand("!roll", DoRoll);
+            pluginManager.RegisterCommand("!timediff", DoTimeDiff);
             pluginManager.RegisterCommand("!uptime", DoUptime);
         }
 
@@ -143,6 +144,22 @@ namespace CitiBot.Plugins.GenericCommands
             }
             sender.AutoDetectSendWhispers = true;
             sender.SendMessage(message.Channel, string.Format("{0} rolls a {1}", message.SenderDisplayName, m_random.Next(1, roll + 1)));
+        }
+        public void DoTimeDiff(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.Args.Length != 3)
+            {
+                return;
+            }
+            TimeSpan ts1, ts2;
+            bool bts1 = TimeSpan.TryParse(message.Args[1], out ts1);
+            bool bts2 = TimeSpan.TryParse(message.Args[2], out ts2);
+            if (!bts1 || !bts2)
+            {
+                return;
+            }
+            var tsr = new TimeSpan(Math.Abs(ts1.Ticks - ts2.Ticks));
+            sender.SendMessage(message.Channel, tsr.ToString());
         }
         public void DoUptime(TwitchClient sender, TwitchMessage message)
         {

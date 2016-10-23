@@ -14,40 +14,39 @@ namespace CitiBot.Plugins.CookieGiver.Models
     [Table("t_cookie_channels")]
     public class CookieChannel
     {
-        [DataMember]
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
-        [DataMember]
         public virtual string Channel { get; set; }
-        [DataMember]
-        public virtual int Delay { get; set; }
+        protected virtual int? CookieDelayDB { get; set; }
+        [Column("BribeDelay")]
+        protected virtual int? BribeDelayDB { get; set; }
+        [Column("StealDelay")]
+        protected virtual int? StealDelayDB { get; set; }
 
-        public static int GetDelay(string channel)
+        [NotMapped]
+        public int CookieDelay
         {
-            var entry = Registry.Instance.CookieChannels.Where(d => d.Channel == channel).FirstOrDefault();
-            if (entry == null)
-                return -1;
-            return entry.Delay;
+            get { return CookieDelayDB.HasValue ? CookieDelayDB.Value : 300; }
+            set { CookieDelayDB = value; }
         }
 
-        public static int GetCookieDelay(string channel)
+        [NotMapped]
+        public int BribeDelay
         {
-            var r = GetChannelOrNew(channel);
-            if (r == null || r.Delay == 0)
-                return -1;
-            else
-                return r.Delay;
-        }
-        public static void SetCookieDelay(string channel, int delay)
-        {
-            var r = GetChannelOrNew(channel);
-            r.Delay = delay;
-            r.Save();
-
+            get { return BribeDelayDB.HasValue ? BribeDelayDB.Value : 300; }
+            set { BribeDelayDB = value; }
         }
 
-        public static CookieChannel GetChannelOrNew(string channel)
+        [NotMapped]
+        public int StealDelay
+        {
+            get { return StealDelayDB.HasValue ? StealDelayDB.Value : 300; }
+            set { StealDelayDB = value; }
+        }
+
+
+        public static CookieChannel GetChannel(string channel)
         {
             var r = Registry.Instance.CookieChannels.Where(d => d.Channel == channel).FirstOrDefault();
             if (r == null)
