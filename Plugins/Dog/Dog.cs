@@ -16,7 +16,7 @@ namespace CitiBot.Plugins.Dog
 
         public void OnLoad(PluginManager pluginManager)
         {
-            pluginManager.RegisterCommand("!dig", Dig);
+            pluginManager.RegisterCommand("!dig2", Dig);
         }
 
         private void Dig(TwitchClient client, TwitchMessage message)

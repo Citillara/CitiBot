@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace CitiBot.Plugins.CookieGiver.Models
 {
-    [DataContract]
     [Table("t_cookie_channels")]
     public class CookieChannel
     {
@@ -18,33 +17,9 @@ namespace CitiBot.Plugins.CookieGiver.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
         public virtual string Channel { get; set; }
-        protected virtual int? CookieDelayDB { get; set; }
-        [Column("BribeDelay")]
-        protected virtual int? BribeDelayDB { get; set; }
-        [Column("StealDelay")]
-        protected virtual int? StealDelayDB { get; set; }
-
-        [NotMapped]
-        public int CookieDelay
-        {
-            get { return CookieDelayDB.HasValue ? CookieDelayDB.Value : 300; }
-            set { CookieDelayDB = value; }
-        }
-
-        [NotMapped]
-        public int BribeDelay
-        {
-            get { return BribeDelayDB.HasValue ? BribeDelayDB.Value : 300; }
-            set { BribeDelayDB = value; }
-        }
-
-        [NotMapped]
-        public int StealDelay
-        {
-            get { return StealDelayDB.HasValue ? StealDelayDB.Value : 300; }
-            set { StealDelayDB = value; }
-        }
-
+        public virtual int CookieDelay { get; set; }
+        public virtual int BribeDelay { get; set; }
+        public virtual int StealDelay { get; set; }
 
         public static CookieChannel GetChannel(string channel)
         {
@@ -60,7 +35,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
             var db = Registry.Instance;
             var id = this.Id;
 
-            if (db.CookieUsers.Any(e => e.Id == id))
+            if (db.CookieChannels.Any(e => e.Id == id))
             {
                 db.Set<CookieChannel>().Attach(this);
                 db.Entry<CookieChannel>(this).State = System.Data.Entity.EntityState.Modified;

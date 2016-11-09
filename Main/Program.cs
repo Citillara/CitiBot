@@ -18,23 +18,17 @@ using Twitch.Models;
 
 namespace CitiBot.Main
 {
-    class Program
+    public class Program
     {
+        public static readonly string Version = "1";
         static void Main(string[] args)
         {
             new Program().MainLoop();
         }
 
-        Regex r = new Regex(@"[^\u0000-\u007F]", RegexOptions.Compiled);
-
-
         void MainLoop()
         {
             Bot.StartAllBots();
-
-            while (true)
-                Console.ReadKey();
-
         }
 
 

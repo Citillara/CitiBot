@@ -13,8 +13,8 @@ namespace CitiBot.Plugins.GenericCommands
     public class GenericCommands : IPlugin
     {
         private Random m_random = new Random();
-        public const string TWITCH_URL = "https://twitch.tv/";
-        public const int RAID_REPEAT = 4;
+        public readonly string TWITCH_URL = "https://twitch.tv/";
+        public readonly int RAID_REPEAT = 4;
         private Dictionary<string, string> m_raidMessages = new Dictionary<string, string>();
         private DateTime m_startTime = DateTime.Now;
 
@@ -37,7 +37,9 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand("!roll", DoRoll);
             pluginManager.RegisterCommand("!timediff", DoTimeDiff);
             pluginManager.RegisterCommand("!uptime", DoUptime);
+            pluginManager.RegisterCommand("!version", DoVersion);
         }
+
 
         public void DoJoin(TwitchClient sender, TwitchMessage message)
         {
@@ -165,6 +167,10 @@ namespace CitiBot.Plugins.GenericCommands
         {
             var d = new TimeSpan(DateTime.Now.Ticks - m_startTime.Ticks);
             sender.SendMessage(message.Channel, "{0}d {1}h {2}m {3}s", d.Days, d.Hours, d.Minutes, d.Seconds);
+        }
+        public void DoVersion(TwitchClient sender, TwitchMessage message)
+        {
+            sender.SendMessage(message.Channel, "IRC {0}, Twitch {1}, CitiBot {2}", Irc.IrcClient.Version, TwitchClient.Version, Program.Version);
         }
 
         private static void RepeatAction(int repeatCount, Action action, int delay = 200)
