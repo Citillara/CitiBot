@@ -102,14 +102,8 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
 
-            var c = new CookieFlavour()
-            {
-                AddedBy = message.SenderName,
-                Text = sub,
-                Channel = message.Channel
-            };
+            CookieFlavour.AddNewCookieFlavor(message.Channel, sub, message.SenderName);
 
-            c.Save();
 
             client.SendMessage(message.Channel, "\"{0}\" have been added to the cookie database", sub);
 
@@ -157,7 +151,7 @@ namespace CitiBot.Plugins.CookieGiver
                          orderby db.CookieReceived descending
                          select new
                          {
-                             Key = db.DisplayName ?? ToolBox.FirstLetterToUpper(db.Username),
+                             Key = db.DisplayName,
                              Rank = (from dbb in top_10
                                      where dbb.CookieReceived > db.CookieReceived
                                      select dbb).Count() + 1,
@@ -215,10 +209,10 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
             }
             // Sets the target depending if it's the sender or not
-            string targetDatabaseKey = targetIsNotSender ? target.ToLowerInvariant() : message.SenderName.ToLowerInvariant();
-            string senderDatabaseKey = message.SenderName.ToLowerInvariant();
+            string targetDatabaseKey = targetIsNotSender ? target.ToLowerInvariant() : message.SenderName;
+            string senderDatabaseKey = message.SenderName;
 
-            var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey);
+            var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey, message.UserId, message.SenderDisplayName);
 
             // Ignores checks if sender is Broadcaster or above
             if (message.UserType < TwitchUserTypes.Broadcaster)
@@ -308,7 +302,6 @@ namespace CitiBot.Plugins.CookieGiver
             else if (split[0].Contains("crashcookie"))
                 flavor = "crashing cookie";
 
-            var target_twitch = TwitchUser.GetUser(target.ToLowerInvariant());
 
             string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target, modifier);
             if (quantity > 1)
@@ -325,7 +318,7 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendMessage(message.Channel, "Usage : !sendcookie <target> <amount>");
                 return;
             }
-            var sender = CookieUser.GetUser(message.Channel, message.SenderName);
+            var sender = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
             var target = CookieUser.GetUser(message.Channel, message.Args[1]);
 
             if (sender == null || sender.CookieReceived < amount)
@@ -344,7 +337,7 @@ namespace CitiBot.Plugins.CookieGiver
         private void SendYoshi(TwitchClient client, TwitchMessage message)
         {
             int bribe_amount = -1;
-            var briber = CookieUser.GetUser(message.Channel, message.SenderName);
+            var briber = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
 
 
             if (message.IsWhisper)
@@ -378,18 +371,6 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
 
-            /*var user_array = CookieUser.GetChannelUserIdsWithCookies(message.Channel).ToArray();
-
-            if (user_array.Count() == 0)
-            {
-                client.SendMessage(message.Channel, "There is no cookies that yoshi can devour, Yoshi is sad :'( ");
-                return;
-            }
-            int index = m_random.Next(0, user_array.Count());
-            int targetId = user_array[index];
-
-            var target = CookieUser.GetUser(targetId);*/
-
             var target = CookieUser.GetUser(message.Channel, message.Args[1].ToLowerInvariant());
 
             if (target == null || target.CookieReceived <= 0)
@@ -414,7 +395,7 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendMessage(message.Channel, "{0} bribed Yoshi, who devoured {1} cookies of {2} ! ({3} cookies left)",
                     message.SenderDisplayName,
                     quantity,
-                    briber.Username,
+                    briber.TwitchUser.BusinessDisplayName,
                     briber.CookieReceived);
 
                 briber.LastYoshiBribe = DateTime.Now;
@@ -432,7 +413,7 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendMessage(message.Channel, "{0} bribed Yoshi, who devoured {1} cookies of {2} ! ({3} cookies left)",
                     message.SenderDisplayName,
                     quantity,
-                    target.Username,
+                    target.TwitchUser.BusinessDisplayName,
                     target.CookieReceived);
 
                 briber.LastYoshiBribe = DateTime.Now;
@@ -453,7 +434,7 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
 
-            var stealer = CookieUser.GetUser(message.Channel, message.SenderName);
+            var stealer = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
             var channel = CookieChannel.GetChannel(message.Channel);
             if (stealer.LastSteal.AddSeconds(channel.StealDelay) > DateTime.Now && message.UserType < TwitchUserTypes.Developper)
             {
@@ -462,7 +443,6 @@ namespace CitiBot.Plugins.CookieGiver
             }
 
             var target = CookieUser.GetUser(message.Channel, message.Args[1]);
-            var ttarget = TwitchUser.GetUser(message.Args[1]);
             if (target.CookieReceived == 0)
             {
                 client.SendWhisper(message.SenderName, "Sorry {0}, but {1} doesn't have any cookies", message.SenderDisplayName, message.Args[1]);
@@ -494,14 +474,14 @@ namespace CitiBot.Plugins.CookieGiver
                 target.CookieReceived -= amount;
                 stealer.Save();
                 target.Save();
-                client.SendMessage(message.Channel, "{0} managed to steal {1} cookies to {2} !", stealer.DisplayName, amount,
-                    target.DisplayName ?? message.Args[1]);
+                client.SendMessage(message.Channel, "{0} managed to steal {1} cookies to {2} !", stealer.TwitchUser.BusinessDisplayName, amount,
+                    target.TwitchUser.BusinessDisplayName ?? message.Args[1]);
                 
             }
             else if (rand > critfailchance || stealer.CookieReceived == 0)
             {
                 // fail
-                client.SendMessage(message.Channel, "{0} didn't managed to steal any cookies this time", stealer.DisplayName);
+                client.SendMessage(message.Channel, "{0} didn't managed to steal any cookies this time", stealer.TwitchUser.BusinessDisplayName);
             }
             else
             {
@@ -517,7 +497,7 @@ namespace CitiBot.Plugins.CookieGiver
                         doYoshi = false;
                         int rnd = m_random.Next(0, list.Count());
                         var newtarget = CookieUser.GetUser(list.Skip(rnd).Take(1).First());
-                        client.SendMessage(message.Channel, "Critical fail ! {0} tumbles and lose his/her cookie purse near {1} who steals {2} of them before running away", stealer.DisplayName, newtarget.DisplayName, amount);
+                        client.SendMessage(message.Channel, "Critical fail ! {0} tumbles and lose his/her cookie purse near {1} who steals {2} of them before running away", stealer.TwitchUser.BusinessDisplayName, newtarget.TwitchUser.BusinessDisplayName, amount);
                         newtarget.CookieReceived += amount;
                         stealer.CookieReceived -= amount;
                         newtarget.Save();
@@ -527,7 +507,7 @@ namespace CitiBot.Plugins.CookieGiver
                 }
                 if(doYoshi)
                 {
-                    client.SendMessage(message.Channel, "Critical fail ! {0} tumbles and lose his/her cookie purse near a yoshi who eats {1} of them before running away", stealer.DisplayName, amount);
+                    client.SendMessage(message.Channel, "Critical fail ! {0} tumbles and lose his/her cookie purse near a yoshi who eats {1} of them before running away", stealer.TwitchUser.BusinessDisplayName, amount);
                     stealer.CookieReceived -= amount;
                     stealer.Save();
                 }

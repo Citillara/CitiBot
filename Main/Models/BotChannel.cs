@@ -20,6 +20,7 @@ namespace CitiBot.Main.Models
         public virtual int Id { get; set; }
         public virtual string Channel { get; set; }
         public virtual BotSettings BotSettings { get; set; }
+        public virtual byte Greetings { get; set; }
 
 
         public virtual void Save()

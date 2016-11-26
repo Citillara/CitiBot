@@ -43,6 +43,10 @@ namespace CitiBot.Database
                 .WithMany(s => s.Plugins)
                 .Map(x => x.MapKey("BotId"));
 
+            modelBuilder.Entity<CookieUser>()
+                .HasRequired(p => p.TwitchUser)
+                .WithMany(s => s.CookieUsers)
+                .Map(x => x.MapKey("TwitchUserId"));
 
         }
     }

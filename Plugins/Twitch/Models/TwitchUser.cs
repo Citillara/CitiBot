@@ -1,4 +1,5 @@
 ﻿using CitiBot.Database;
+using CitiBot.Plugins.CookieGiver.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -13,14 +14,38 @@ namespace CitiBot.Plugins.Twitch.Models
 
     [DataContract]
     [Table("t_twitch_users")]
-    public class TwitchUser
+    public class TwitchUser : BaseModel<TwitchUser>
     {
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
+        public virtual long? TwitchId { get; set; }
         public virtual string Name { get; set; }
         public virtual string DisplayName { get; set; }
+
+        public virtual ICollection<CookieUser> CookieUsers { get; set; }
+
+        [NotMapped]
+        public string BusinessDisplayName { get { return DisplayName ?? Name; } }
+
+        private bool isNew = false;
+
+        private TwitchUser()
+        {
+
+        }
+
+        public static TwitchUser New(string name, long? twitchId, string displayName = null)
+        {
+            return new TwitchUser()
+            {
+                isNew = true,
+                Name = name,
+                TwitchId = twitchId,
+                DisplayName = displayName
+            };
+        }
 
         public static TwitchUser GetUser(string name)
         {
@@ -31,27 +56,36 @@ namespace CitiBot.Plugins.Twitch.Models
         {
             return Registry.Instance.TwitchUsers.Where(c => c.Id == id).FirstOrDefault();
         }
-        
-        public virtual void Save()
+
+        public static TwitchUser GetUserByTwitchId(int id)
         {
-
-            var db = Registry.Instance;
-            var id = this.Id;
-            
-            if (db.CookieUsers.Any(e => e.Id == id))
-            {
-                db.Set<TwitchUser>().Attach(this);
-                db.Entry<TwitchUser>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.TwitchUsers.Add(this);
-                db.Entry<TwitchUser>(this).State = System.Data.Entity.EntityState.Added;
-            }
-
-            db.SaveChanges();
+            return Registry.Instance.TwitchUsers.Where(c => c.TwitchId == id).FirstOrDefault();
         }
 
+        public void CheckAndUpdate(string displayName, long? twitchId = null)
+        {
+            bool doSave = false;
+            if (!string.IsNullOrEmpty(displayName) && !BusinessDisplayName.Equals(displayName))
+            {
+                doSave = true;
+                DisplayName = displayName;
+            }
+            if (twitchId != null && TwitchId != twitchId)
+            {
+                doSave = true;
+                TwitchId = twitchId;
+            }
+            if(doSave)
+                Save();
+        }
+
+        public virtual void Save()
+        {
+            this.Save(isNew);
+            if (isNew)
+                isNew = false;
+        }
     }
+
 }
 

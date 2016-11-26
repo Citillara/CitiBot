@@ -15,106 +15,52 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [Table("t_cookie_users")]
-    public class CookieUser
+    public class CookieUser : BaseModel<CookieUser>
     {
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
+        //public virtual string Username { get; set; }
+        public virtual string Channel { get; set; }
+        public TwitchUser TwitchUser { get; set; }
         public virtual int CookieReceived { get; set; }
         public virtual int TopCookieCount { get; set; }
-        [Column("LastReceived")]
-        protected virtual DateTime? LastReceivedDB { get; set; }
-        [Column("LastYoshiBribe")]
-        protected virtual DateTime? LastYoshiBribeDB { get; set; }
-        [Column("LastSend")]
-        protected virtual DateTime? LastSendDB { get; set; }
-        [Column("LastSteal")]
-        protected virtual DateTime? LastStealDB { get; set; }
-        public virtual string Username { get; set; }
-        public virtual string Channel { get; set; }
+        public virtual DateTime LastReceived { get; set; }
+        public virtual DateTime LastYoshiBribe { get; set; }
+        public virtual DateTime LastSend { get; set; }
+        public virtual DateTime LastSteal { get; set; }
 
-        private string m_displayName;
-        [NotMapped]
-        public string DisplayName
+
+        private bool isNew = false;
+
+        private CookieUser()
         {
-            get
+        }
+
+        private static CookieUser New(string channel, string username, long? twitchId = null, string displayName = null)
+        {
+            var twitchUser = TwitchUser.GetUser(username);
+            if (twitchUser == null)
             {
-                if (m_displayName == null)
-                {
-                    var t = TwitchUser.GetUser(Username);
-                    if (t != null)
-                        m_displayName = t.DisplayName ?? ToolBox.FirstLetterToUpper(Username);
-                    else
-                        m_displayName = ToolBox.FirstLetterToUpper(Username);
-                }
-                return m_displayName;
+                twitchUser = TwitchUser.New(username, twitchId, displayName);
+                twitchUser.Save();
             }
-            set
-            {
-                m_displayName = value;
-            }
-        }
-
-        [NotMapped]
-        public DateTime LastReceived
-        {
-            get { return LastReceivedDB.HasValue ? LastReceivedDB.Value : DateTime.MinValue; }
-            set { LastReceivedDB = value; }
-        }
-        [NotMapped]
-        public DateTime LastYoshiBribe
-        {
-            get { return LastYoshiBribeDB.HasValue ? LastYoshiBribeDB.Value : DateTime.MinValue; }
-            set { LastYoshiBribeDB = value; }
-        }
-        [NotMapped]
-        public DateTime LastSend
-        {
-            get { return LastSendDB.HasValue ? LastSendDB.Value : DateTime.MinValue; }
-            set { LastSendDB = value; }
-        }
-        [NotMapped]
-        public DateTime LastSteal
-        {
-            get { return LastStealDB.HasValue ? LastStealDB.Value : DateTime.MinValue; }
-            set { LastStealDB = value; }
-        }
-
-        protected CookieUser()
-        {
-        }
-
-        protected static CookieUser New(string channel, string username)
-        {
             return new CookieUser()
             {
+                isNew = true,
                 Channel = channel,
-                Username = username
+                TwitchUser = twitchUser
             };
         }
 
-        public static CookieUser Clone(CookieUser user, string displayName = null)
+        public static CookieUser GetUser(string channel, string username, long? twitchId = null, string displayName = null)
         {
-            return new CookieUser()
-            {
-                Channel = user.Channel,
-                CookieReceived = user.CookieReceived,
-                DisplayName = displayName,
-                Id = user.Id,
-                LastReceived = user.LastReceived,
-                LastSend = user.LastSend,
-                LastYoshiBribe = user.LastYoshiBribe,
-                TopCookieCount = user.TopCookieCount,
-                Username = user.Username
-            };
-        }
-
-        public static CookieUser GetUser(string channel, string username)
-        {
-            var val = Registry.Instance.CookieUsers.Where(c => c.Channel == channel && c.Username == username).FirstOrDefault();
+            var val = Registry.Instance.CookieUsers.Include("TwitchUser").Where(c => c.Channel == channel && c.TwitchUser.Name == username)
+                .FirstOrDefault();
             if (val == null)
-                val = New(channel, username);
+                val = New(channel, username, twitchId, displayName);
+            val.TwitchUser.CheckAndUpdate(displayName, twitchId);
             return val;
         }
         public static CookieUser GetUser(int id)
@@ -130,7 +76,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
                          where db.Channel == channel
                          select new
                          {
-                             Username = db.Username,
+                             Username = db.TwitchUser.Name,
                              Rank = (from dbb in Registry.Instance.CookieUsers
                                      where dbb.CookieReceived > db.CookieReceived
                                      where dbb.Channel == channel
@@ -146,19 +92,15 @@ namespace CitiBot.Plugins.CookieGiver.Models
         {
             return Registry.Instance.CookieUsers.Count(c => c.Channel == channel);
         }
-        public static IEnumerable<CookieUser> GetChannelTopUsers(string channel, int count)
+        public static IEnumerable<LightCookieUser> GetChannelTopUsers(string channel, int count)
         {
 
             var result = from db in Registry.Instance.CookieUsers
                          where db.Channel == channel
-                         join tu in Registry.Instance.TwitchUsers on db.Username equals tu.Name into joined
-                         from subtu in joined.DefaultIfEmpty()
                          orderby db.CookieReceived descending
-                         select new { db, subtu };
+                         select new LightCookieUser() { CookieReceived = db.CookieReceived, DisplayName = db.TwitchUser.DisplayName };
             var take = result.Take(count);
-            var list = new List<CookieUser>(take.Count());
-            take.ToList().ForEach(e => list.Add(Clone(e.db, e.subtu == null ? null : e.subtu.DisplayName)));
-            return list;
+            return take;
         }
         public static IEnumerable<Int32> GetChannelUserIdsWithCookies(string channel)
         {
@@ -172,36 +114,18 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public virtual void Save()
         {
-
-            var db = Registry.Instance;
-            var id = this.Id;
-
-            if (this.LastReceivedDB == DateTime.MinValue)
-                this.LastReceivedDB = null;
-            if (this.LastSendDB == DateTime.MinValue)
-                this.LastSendDB = null;
-            if (this.LastYoshiBribeDB == DateTime.MinValue)
-                this.LastYoshiBribeDB = null;
-            if (this.LastStealDB == DateTime.MinValue)
-                this.LastStealDB = null;
-
             if (this.CookieReceived > this.TopCookieCount)
                 this.TopCookieCount = this.CookieReceived;
 
-
-            if (db.CookieUsers.Any(e => e.Id == id))
-            {
-                db.Set<CookieUser>().Attach(this);
-                db.Entry<CookieUser>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.CookieUsers.Add(this);
-                db.Entry<CookieUser>(this).State = System.Data.Entity.EntityState.Added;
-            }
-
-            db.SaveChanges();
+            this.Save(isNew);
+            if (isNew)
+                isNew = false;
         }
 
+        public class LightCookieUser
+        {
+            public int CookieReceived;
+            public string DisplayName;
+        }
     }
 }

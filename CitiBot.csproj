@@ -88,6 +88,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Database\BaseModel.cs" />
     <Compile Include="Database\DatabaseMappings.cs" />
     <Compile Include="Main\Bot.cs" />
     <Compile Include="Main\Models\BotChannel.cs" />

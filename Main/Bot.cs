@@ -33,7 +33,7 @@ namespace CitiBot.Main
             m_TwitchClient.OnMessage += m_TwitchClient_OnMessage;
             m_TwitchClient.OnPart += m_TwitchClient_OnPart;
             m_TwitchClient.OnPerform += m_TwitchClient_OnPerform;
-            m_TwitchClient.LogLevel = Irc.MessageLevel.Debug;
+            m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Debug;
             m_TwitchClient.AutoDetectSendWhispers = true;
             m_TwitchClient.Connect();
         }
@@ -50,7 +50,7 @@ namespace CitiBot.Main
 
         void m_TwitchClient_OnJoin(TwitchClient sender, Twitch.Models.TwitchClientOnJoinEventArgs args)
         {
-            if(args.IsMyself)
+            if(args.IsMyself && m_BotSettings.Channels.Where(c => c.Channel == args.Channel).FirstOrDefault().Greetings == 1)
                 sender.SendMessage(args.Channel, "Joined");
         }
 

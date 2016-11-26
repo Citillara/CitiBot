@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [Table("t_cookie_flavours")]
-    public class CookieFlavour
+    public class CookieFlavour : BaseModel<CookieFlavour>
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -21,6 +21,13 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual DateTime? AddedDate { get; set; }
         public virtual string AddedBy { get; set; }
         public virtual string Text { get; set; }
+
+        private bool isNew = false;
+
+        private CookieFlavour()
+        {
+
+        }
 
         public static IEnumerable<Int32> GetChannelCookies(string channel)
         {
@@ -41,23 +48,24 @@ namespace CitiBot.Plugins.CookieGiver.Models
             return Registry.Instance.CookieFlavours.Count();
         }
 
-        public virtual void Save()
+        public static void AddNewCookieFlavor(string channel, string text, string addedBy)
         {
-
-            var db = Registry.Instance;
-            var id = this.Id;
-            if (db.CookieUsers.Any(e => e.Id == id))
+            var c = new CookieFlavour()
             {
-                db.Set<CookieFlavour>().Attach(this);
-                db.Entry<CookieFlavour>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.CookieFlavours.Add(this);
-                db.Entry<CookieFlavour>(this).State = System.Data.Entity.EntityState.Added;
-            }
-
-            db.SaveChanges();
+                Channel = channel,
+                Text = text,
+                AddedBy = addedBy,
+                AddedDate = DateTime.Now,
+                isNew = true
+            };
         }
+
+        private void Save()
+        {
+            this.Save(isNew);
+            if (isNew)
+                isNew = false;
+        }
+
     }
 }

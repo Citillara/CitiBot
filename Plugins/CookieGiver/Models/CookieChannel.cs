@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [Table("t_cookie_channels")]
-    public class CookieChannel
+    public class CookieChannel : BaseModel<CookieChannel>
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -21,32 +21,21 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual int BribeDelay { get; set; }
         public virtual int StealDelay { get; set; }
 
+        private bool isNew = false;
+
         public static CookieChannel GetChannel(string channel)
         {
             var r = Registry.Instance.CookieChannels.Where(d => d.Channel == channel).FirstOrDefault();
             if (r == null)
-                r = new CookieChannel() { Channel = channel };
+                r = new CookieChannel() { Channel = channel, isNew = true };
             return r;
         }
 
         public virtual void Save()
         {
-
-            var db = Registry.Instance;
-            var id = this.Id;
-
-            if (db.CookieChannels.Any(e => e.Id == id))
-            {
-                db.Set<CookieChannel>().Attach(this);
-                db.Entry<CookieChannel>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.CookieChannels.Add(this);
-                db.Entry<CookieChannel>(this).State = System.Data.Entity.EntityState.Added;
-            }
-
-            db.SaveChanges();
+            this.Save(isNew);
+            if (isNew)
+                isNew = false;
         }
     }
 }

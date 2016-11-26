@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Plugins.CookieGiver.Models
 {
     [Table("t_cookie_calories")]
-    public class CaloriesPerActivity
+    public class CaloriesPerActivity : BaseModel<CaloriesPerActivity>
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -28,27 +28,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public static CaloriesPerActivity GetById(int id)
         {
             return Registry.Instance.CaloriesPerActivity.Where(c => c.Id == id).FirstOrDefault();
-        }
-
-
-        public virtual void Save()
-        {
-
-            var db = Registry.Instance;
-            var id = this.Id;
-
-            if (db.CookieUsers.Any(e => e.Id == id))
-            {
-                db.Set<CaloriesPerActivity>().Attach(this);
-                db.Entry<CaloriesPerActivity>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.CaloriesPerActivity.Add(this);
-                db.Entry<CaloriesPerActivity>(this).State = System.Data.Entity.EntityState.Added;
-            }
-
-            db.SaveChanges();
         }
     }
 }

@@ -52,8 +52,17 @@ namespace CitiBot.Main
             var split = message.Message.Split(' ');
             string msg = split[0];
 
-            if (m_commands.ContainsKey(msg))
-                m_commands[msg].Invoke(client, message);
+            try
+            {
+                Action<TwitchClient, TwitchMessage> action;
+                if (m_commands.TryGetValue(msg, out action))
+                    action.Invoke(client, message);
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(message);
+                Console.WriteLine(e.ToString());
+            }
         }
     }
 }
