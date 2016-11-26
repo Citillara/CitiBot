@@ -33,7 +33,7 @@ namespace CitiBot.Main
             m_TwitchClient.OnMessage += m_TwitchClient_OnMessage;
             m_TwitchClient.OnPart += m_TwitchClient_OnPart;
             m_TwitchClient.OnPerform += m_TwitchClient_OnPerform;
-            m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Debug;
+            m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Info;
             m_TwitchClient.AutoDetectSendWhispers = true;
             m_TwitchClient.Connect();
         }
