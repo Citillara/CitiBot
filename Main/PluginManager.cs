@@ -60,6 +60,7 @@ namespace CitiBot.Main
             }
             catch(Exception e)
             {
+                Console.WriteLine(DateTime.Now.ToString());
                 Console.WriteLine(message);
                 Console.WriteLine(e.ToString());
             }

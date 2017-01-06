@@ -16,7 +16,6 @@ namespace CitiBot.Database
 
         protected void Save(bool isNew)
         {
-            Console.WriteLine("Save isNew {0}", isNew);
             T t = (T)(object)this;
             if (isNew)
             {

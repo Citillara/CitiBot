@@ -98,7 +98,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
             var result = from db in Registry.Instance.CookieUsers
                          where db.Channel == channel
                          orderby db.CookieReceived descending
-                         select new LightCookieUser() { CookieReceived = db.CookieReceived, DisplayName = db.TwitchUser.DisplayName };
+                         select new LightCookieUser() { CookieReceived = db.CookieReceived, DisplayName = db.TwitchUser.DisplayName ?? db.TwitchUser.Name };
             var take = result.Take(count);
             return take;
         }

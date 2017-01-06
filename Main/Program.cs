@@ -14,7 +14,7 @@ namespace CitiBot.Main
 {
     public class Program
     {
-        public static readonly string Version = "2";
+        public static readonly string Version = "3";
         static void Main(string[] args)
         {
             new Program().MainLoop();
