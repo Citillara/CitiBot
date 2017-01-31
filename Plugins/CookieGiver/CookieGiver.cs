@@ -44,6 +44,12 @@ namespace CitiBot.Plugins.CookieGiver
             pluginManager.RegisterCommand("!cookierank", DisplayCookieCount);
             pluginManager.RegisterCommand("!cookiecount", DisplayCookieCount);
 
+            pluginManager.RegisterCommand("!ranks", DisplayCookieCountLink);
+            pluginManager.RegisterCommand("!globalrank", DisplayCookieCountLink);
+
+            pluginManager.RegisterCommand("!flavours", DisplayCookieFlavours);
+            pluginManager.RegisterCommand("!flavors", DisplayCookieFlavours);
+
             pluginManager.RegisterCommand("!sendcookie", SendCookies);
             pluginManager.RegisterCommand("!givecookie", SendCookies);
             pluginManager.RegisterCommand("!cookiesend", SendCookies);
@@ -68,6 +74,8 @@ namespace CitiBot.Plugins.CookieGiver
             pluginManager.RegisterCommand("!top10", DisplayTop10);
 
         }
+
+
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
         {
@@ -143,8 +151,31 @@ namespace CitiBot.Plugins.CookieGiver
         {
             DisplayTop(client, message, 10);
         }
+        private void DisplayCookieCountLink(TwitchClient client, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+            {
+                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                return;
+            }
+            client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/{0}/cookies", message.Channel.ToLowerInvariant().Replace("#", ""));
+        }
+        private void DisplayCookieFlavours(TwitchClient client, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+            {
+                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                return;
+            }
+            client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/{0}/cookies/flavours", message.Channel.ToLowerInvariant().Replace("#", ""));
+        }
+        DateTime lastDisplayTop = DateTime.MinValue;
         private void DisplayTop(TwitchClient client, TwitchMessage message, int count)
         {
+            if (lastDisplayTop.AddMinutes(1) > DateTime.Now)
+                return;
+            lastDisplayTop = DateTime.Now;
+
             var top_10 = CookieUser.GetChannelTopUsers(message.Channel, count);
 
             var sorted = from db in top_10
@@ -178,7 +209,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (split.Length > 1)
             {
                 // Sends the cookie to someone else. Usage : !cookie <target>
-                target = split[1].Trim();
+                target = split[1].Trim().Replace("@", "");
                 targetIsNotSender = true;
             }
             if (split.Length > 2)
@@ -207,6 +238,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (message.IsWhisper && !allowedThroughWhisper)
             {
                 client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                return;
             }
             // Sets the target depending if it's the sender or not
             string targetDatabaseKey = targetIsNotSender ? target.ToLowerInvariant() : message.SenderName;
@@ -214,8 +246,8 @@ namespace CitiBot.Plugins.CookieGiver
 
             var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey, message.UserId, message.SenderDisplayName);
 
-            // Ignores checks if sender is Broadcaster or above
-            if (message.UserType < TwitchUserTypes.Broadcaster)
+            // Ignores checks if sender is Developper or above
+            if (message.UserType < TwitchUserTypes.Developper)
             {
 
                 // Sender is in database
@@ -229,9 +261,11 @@ namespace CitiBot.Plugins.CookieGiver
                         delay_in_seconds = delay;
 
                     // Sender is sending before the delay
-                    if (sender_user_database.LastSend.AddSeconds(delay_in_seconds) > DateTime.Now)
+                    var next_allowance_date = sender_user_database.LastSend.AddSeconds(delay_in_seconds);
+                    if (next_allowance_date > DateTime.Now)
                     {
-                        client.SendWhisper(message.SenderName, "Sorry {0} but you can get/send cookies only every {1} seconds", message.SenderDisplayName, delay_in_seconds);
+                        var next_allowance_seconds = (int)(next_allowance_date - DateTime.Now).TotalSeconds;
+                        client.SendWhisper(message.SenderName, "Sorry {0} but you can get/send cookies only every {1} seconds (next in {2} seconds)", message.SenderDisplayName, delay_in_seconds, next_allowance_seconds);
                         return; // Prevent him from sending
                     }
                 }
@@ -365,9 +399,11 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
             var channel = CookieChannel.GetChannel(message.Channel);
-            if (briber.LastYoshiBribe.AddMinutes(channel.BribeDelay) > DateTime.Now)
+            var nextbribe = briber.LastYoshiBribe.AddSeconds(channel.BribeDelay);
+            if (nextbribe > DateTime.Now)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you can only bribe Yoshi every {1} seconds", message.SenderDisplayName, channel.BribeDelay);
+                var sec = (int)(nextbribe - DateTime.Now).TotalSeconds;
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you can only bribe Yoshi every {1} seconds (next attempt in {2} seconds)", message.SenderDisplayName, channel.BribeDelay, sec);
                 return;
             }
 

@@ -27,7 +27,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         {
             var r = Registry.Instance.CookieChannels.Where(d => d.Channel == channel).FirstOrDefault();
             if (r == null)
-                r = new CookieChannel() { Channel = channel, isNew = true };
+                r = new CookieChannel() { Channel = channel, isNew = true, BribeDelay = 600, CookieDelay = 300, StealDelay = 600 };
             return r;
         }
 
