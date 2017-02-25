@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace CitiBot.Main.Models
 {
     [Table("t_bots")]
-    public class BotSettings
+    public class BotSettings : BaseModel<BotSettings>
     {
 
         [Key]
@@ -23,25 +23,38 @@ namespace CitiBot.Main.Models
         public virtual ICollection<BotPlugin> Plugins { get; set; }
         public virtual ICollection<BotChannel> Channels { get; set; }
 
+        private bool isNew;
 
         public virtual void Save()
         {
+            this.Save(isNew);
+            if (isNew)
+                isNew = false;
+        }
 
-            var db = Registry.Instance;
-            var id = this.Id;
+        public ICollection<BotChannel> GetAutoJoinChannels()
+        {
+            return Channels.Where(c => c.AutoJoin == BotChannel.AutoJoinSettings.Yes).ToList();
+        }
 
-            if (db.CookieUsers.Any(e => e.Id == id))
-            {
-                db.Set<BotSettings>().Attach(this);
-                db.Entry<BotSettings>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.BotSettings.Add(this);
-                db.Entry<BotSettings>(this).State = System.Data.Entity.EntityState.Added;
-            }
+        public BotChannel GetChannel(string channel)
+        {
+            var chan = Channels.Where(c => c.Channel == channel).FirstOrDefault();
+            if (chan != null)
+                return chan;
 
-            db.SaveChanges();
+            chan = BotChannel.New(channel, this);
+            this.Channels.Add(chan);
+
+            chan.Save();
+            this.Save();
+
+            return chan;
+        }
+
+        public static BotSettings GetById(int id)
+        {
+            return Registry.Instance.BotSettings.Where(b => b.Id == id).FirstOrDefault();
         }
 
         public static IEnumerable<BotSettings> GetAllBots()

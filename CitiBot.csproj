@@ -91,18 +91,20 @@
   <ItemGroup>
     <Compile Include="Database\BaseModel.cs" />
     <Compile Include="Database\DatabaseMappings.cs" />
-    <Compile Include="Main\Bot.cs" />
-    <Compile Include="Main\Models\BotChannel.cs" />
-    <Compile Include="Main\Models\BotPlugin.cs" />
-    <Compile Include="Main\Models\BotSettings.cs" />
-    <Compile Include="Main\PluginManager.cs" />
-    <Compile Include="Database\MySQLDatabase.cs" />
+    <Compile Include="Main\Bot\Bot.cs" />
+    <Compile Include="Main\Bot\Models\BotChannel.cs" />
+    <Compile Include="Main\Bot\Models\BotPlugin.cs" />
+    <Compile Include="Main\Bot\Models\BotSettings.cs" />
+    <Compile Include="Main\Plugin\PluginManager.cs" />
+    <Compile Include="Database\Registry.cs" />
     <Compile Include="Main\Extensions.cs" />
-    <Compile Include="Main\IPlugin.cs" />
+    <Compile Include="Main\Plugin\Plugin.cs" />
     <Compile Include="Plugins\CookieGiver\CookieGiver.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CaloriesPerActivity.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieChannel.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieFlavour.cs" />
+    <Compile Include="Plugins\CookieGiver\Models\CookiePoll.cs" />
+    <Compile Include="Plugins\CookieGiver\Models\CookiePollOption.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
     <Compile Include="Plugins\Dog\Dog.cs" />
     <Compile Include="Plugins\Dog\Models\DogUser.cs" />

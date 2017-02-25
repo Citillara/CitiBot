@@ -12,7 +12,7 @@ namespace CitiBot.Main.Models
 {
 
     [Table("t_bots_plugins")]
-    public class BotPlugin
+    public class BotPlugin : BaseModel<BotPlugin>
     {
 
         [Key]
@@ -21,25 +21,13 @@ namespace CitiBot.Main.Models
         public virtual string PluginName { get; set; }
         public virtual BotSettings BotSettings { get; set; }
 
+        private bool isNew;
 
         public virtual void Save()
         {
-
-            var db = Registry.Instance;
-            var id = this.Id;
-
-            if (db.CookieUsers.Any(e => e.Id == id))
-            {
-                db.Set<BotPlugin>().Attach(this);
-                db.Entry<BotPlugin>(this).State = System.Data.Entity.EntityState.Modified;
-            }
-            else
-            {
-                db.BotPlugins.Add(this);
-                db.Entry<BotPlugin>(this).State = System.Data.Entity.EntityState.Added;
-            }
-
-            db.SaveChanges();
+            this.Save(isNew);
+            if (isNew)
+                isNew = false;
         }
 
     }

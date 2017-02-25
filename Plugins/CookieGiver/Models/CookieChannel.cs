@@ -21,6 +21,9 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual int BribeDelay { get; set; }
         public virtual int StealDelay { get; set; }
 
+
+        public virtual ICollection<CookiePoll> Polls { get; set; }
+
         private bool isNew = false;
 
         public static CookieChannel GetChannel(string channel)

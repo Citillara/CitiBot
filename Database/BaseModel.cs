@@ -11,7 +11,6 @@ namespace CitiBot.Database
 {
     public abstract class BaseModel<T> where T : class
     {
-        protected Registry DB { get { return Database.Registry.Instance; } }
 
 
         protected void Save(bool isNew)
@@ -19,16 +18,16 @@ namespace CitiBot.Database
             T t = (T)(object)this;
             if (isNew)
             {
-                DB.Set<T>().Add(t);
-                DB.Entry<T>(t).State = System.Data.Entity.EntityState.Added;
+                Database.Registry.Instance.Set<T>().Add(t);
+                Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Added;
             }
             else
             {
-                DB.Set<T>().Attach(t);
-                DB.Entry<T>(t).State = System.Data.Entity.EntityState.Modified;
+                Database.Registry.Instance.Set<T>().Attach(t);
+                Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Modified;
             }
 
-            DB.SaveChanges();
+            Database.Registry.Instance.SaveChanges();
         }
     }
 }

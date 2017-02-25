@@ -10,13 +10,13 @@ using Twitch.Models;
 
 namespace CitiBot.Plugins.Dog
 {
-    public class Dog : IPlugin
+    public class Dog : Plugin
     {
         Random m_Random = new Random();
 
-        public void OnLoad(PluginManager pluginManager)
+        public override void OnLoad(PluginManager pluginManager)
         {
-            pluginManager.RegisterCommand("!dig2", Dig);
+            //pluginManager.RegisterCommand("!dig2", Dig);
         }
 
         private void Dig(TwitchClient client, TwitchMessage message)

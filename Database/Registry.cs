@@ -16,6 +16,7 @@ namespace CitiBot.Database
     public partial class Registry : DbContext
     {
         private static readonly string ConnectionString = ConfigurationManager.ConnectionStrings["Database"].ConnectionString;
+        private bool m_disposed = false;
 
         public Registry()
             : base(ConnectionString)
@@ -26,7 +27,6 @@ namespace CitiBot.Database
 
         private void Log(string text)
         {
-            
             Console.WriteLine(text);
             File.AppendAllText(@"C:\log.txt", text + Environment.NewLine);
         }
@@ -36,14 +36,23 @@ namespace CitiBot.Database
         {
             
         }
-         
+
+        public void Close()
+        {
+            m_disposed = true;
+            this.Dispose();
+        }
+        
+        [ThreadStatic]
         private static Registry m_instance;
         public static Registry Instance
         {
             get
             {
-                if (m_instance == null)
+                if (m_instance == null || m_instance.m_disposed)
+                {
                     m_instance = new Registry();
+                }
                 return m_instance;
             }
         }

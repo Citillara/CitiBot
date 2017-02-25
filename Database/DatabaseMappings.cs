@@ -18,6 +18,8 @@ namespace CitiBot.Database
         public DbSet<CookieFlavour> CookieFlavours { get; set; }
         public DbSet<CaloriesPerActivity> CaloriesPerActivity { get; set; }
         public DbSet<CookieChannel> CookieChannels { get; set; }
+        public DbSet<CookiePoll> CookiePolls { get; set; }
+        public DbSet<CookiePollOption> CookiePollOptions { get; set; }
 
         public DbSet<DogUser> DogUsers { get; set; }
 
@@ -31,12 +33,12 @@ namespace CitiBot.Database
         {
             modelBuilder.Conventions.Remove<PluralizingTableNameConvention>();
 
+            Console.WriteLine("OnModelCreating");
 
             modelBuilder.Entity<BotChannel>()
                 .HasRequired(p => p.BotSettings)
                 .WithMany(s => s.Channels)
                 .Map(x => x.MapKey("BotId"));
-
 
             modelBuilder.Entity<BotPlugin>()
                 .HasRequired(p => p.BotSettings)
@@ -47,6 +49,16 @@ namespace CitiBot.Database
                 .HasRequired(p => p.TwitchUser)
                 .WithMany(s => s.CookieUsers)
                 .Map(x => x.MapKey("TwitchUserId"));
+
+            modelBuilder.Entity<CookiePoll>()
+                .HasRequired(p => p.Channel)
+                .WithMany(s => s.Polls)
+                .Map(x => x.MapKey("CookieChannelId"));
+
+            modelBuilder.Entity<CookiePollOption>()
+                .HasRequired(p => p.Poll)
+                .WithMany(s => s.PollOptions)
+                .Map(x => x.MapKey("PollId"));
 
         }
     }

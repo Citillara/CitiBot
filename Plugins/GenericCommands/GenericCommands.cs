@@ -10,7 +10,7 @@ using Twitch.Models;
 
 namespace CitiBot.Plugins.GenericCommands
 {
-    public class GenericCommands : IPlugin
+    public class GenericCommands : Plugin
     {
         private Random m_random = new Random();
         public readonly string TWITCH_URL = "https://twitch.tv/";
@@ -19,26 +19,34 @@ namespace CitiBot.Plugins.GenericCommands
         private DateTime m_startTime = DateTime.Now;
 
 
-        public void OnLoad(PluginManager pluginManager)
+        public override void OnLoad(PluginManager pluginManager)
         {
-            pluginManager.RegisterCommand("!bug", DoBug);
-            pluginManager.RegisterCommand("!join", DoJoin);
-            pluginManager.RegisterCommand("!part", DoPart);
-            pluginManager.RegisterCommand("!pyramid", DoPyramid);
-            pluginManager.RegisterCommand("!raid", DoRaid);
-            pluginManager.RegisterCommand("!raidmessage", DoRaidMessage);
-            pluginManager.RegisterCommand("!d2", DoRoll);
-            pluginManager.RegisterCommand("!d4", DoRoll);
-            pluginManager.RegisterCommand("!d6", DoRoll);
-            pluginManager.RegisterCommand("!d8", DoRoll);
-            pluginManager.RegisterCommand("!d10", DoRoll);
-            pluginManager.RegisterCommand("!d12", DoRoll);
-            pluginManager.RegisterCommand("!d20", DoRoll);
-            pluginManager.RegisterCommand("!d100", DoRoll);
-            pluginManager.RegisterCommand("!roll", DoRoll);
-            pluginManager.RegisterCommand("!timediff", DoTimeDiff);
-            pluginManager.RegisterCommand("!uptime", DoUptime);
-            pluginManager.RegisterCommand("!version", DoVersion);
+
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoBug, "!bug") { ChannelCooldown = 30 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoJoin, "!join"));
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoPart, "!part"));
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoPyramid, "!pyramid"));
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoRaid, "!raid") { ChannelCooldown = 5 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoRaidMessage, "!raidmessage") { ChannelCooldown = 5 });
+
+
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoRoll,
+                    "!d2", "!d4", "!d6", "!d8", "!d10", "!d12", "!d20", "!d100", "!roll"
+                    ) { UserChannelCooldown = 30 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff") { ChannelCooldown = 5 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoUptime, "!uptime") { ChannelCooldown = 5 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoVersion, "!version") { ChannelCooldown = 5 });
+
         }
 
 

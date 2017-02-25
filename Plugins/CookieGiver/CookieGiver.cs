@@ -14,12 +14,14 @@ using Twitch.Models;
 
 namespace CitiBot.Plugins.CookieGiver
 {
-    public class CookieGiver : IPlugin
+    public class CookieGiver : Plugin
     {
 
         private const int CAL_PER_COOKIE = 31;
         private Random m_random = new Random();
         private DateTime m_previousSend = DateTime.MinValue;
+
+        private List<Thread> m_threads = new List<Thread>();
 
         public CookieGiver()
         {
@@ -31,51 +33,80 @@ namespace CitiBot.Plugins.CookieGiver
             Console.WriteLine("Database loaded with " + CookieFlavour.GetCookieCount());
         }
 
-        public void OnLoad(PluginManager pluginManager)
+        public override void OnLoad(PluginManager pluginManager)
         {
-            pluginManager.RegisterCommand("!cookie", GiveCookie);
-            pluginManager.RegisterCommand("!cookies", GiveCookie);
-            pluginManager.RegisterCommand("!welcomecookie", GiveCookie);
-            pluginManager.RegisterCommand("!lovecookie", GiveCookie);
-            pluginManager.RegisterCommand("!wrcookie", GiveCookie);
-            pluginManager.RegisterCommand("!crashcookie", GiveCookie);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, GiveCookie,
+                    "!cookie",
+                    "!cookies",
+                    "!welcomecookie",
+                    "!lovecookie",
+                    "!wrcookie",
+                    "!crashcookie",
+                    "!morningcookie",
+                    "!eveningcookie"
+                    ));
 
-            pluginManager.RegisterCommand("!rank", DisplayCookieCount);
-            pluginManager.RegisterCommand("!cookierank", DisplayCookieCount);
-            pluginManager.RegisterCommand("!cookiecount", DisplayCookieCount);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DisplayCookieCount,
+                    "!rank",
+                    "!cookierank",
+                    "!cookiecount"
+                    ) { UserCooldown = 30 });
 
-            pluginManager.RegisterCommand("!ranks", DisplayCookieCountLink);
-            pluginManager.RegisterCommand("!globalrank", DisplayCookieCountLink);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DisplayCookieCountLink,
+                    "!ranks",
+                    "!globalrank"
+                    ) { ChannelCooldown = 30 });
 
-            pluginManager.RegisterCommand("!flavours", DisplayCookieFlavours);
-            pluginManager.RegisterCommand("!flavors", DisplayCookieFlavours);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DisplayCookieFlavours,
+                    "!flavours",
+                    "!flavors"
+                    ) { ChannelCooldown = 30 });
 
-            pluginManager.RegisterCommand("!sendcookie", SendCookies);
-            pluginManager.RegisterCommand("!givecookie", SendCookies);
-            pluginManager.RegisterCommand("!cookiesend", SendCookies);
-            pluginManager.RegisterCommand("!cookiegive", SendCookies);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, SendCookies,
+                    "!sendcookie",
+                    "!givecookie",
+                    "!cookiesend",
+                    "!cookiegive"
+                    ));
 
-            pluginManager.RegisterCommand("!stealcookie", StealCookies);
-            pluginManager.RegisterCommand("!stealcookies", StealCookies);
 
-            pluginManager.RegisterCommand("!bribe", SendYoshi);
-            pluginManager.RegisterCommand("!yoshi", SendYoshi);
-            pluginManager.RegisterCommand("!bribeyoshi", SendYoshi);
-            pluginManager.RegisterCommand("!yoshibribe", SendYoshi);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, SendYoshi,
+                    "!bribe",
+                    "!yoshi",
+                    "!bribeyoshi",
+                    "!yoshibribe"
+                    ));
 
-            pluginManager.RegisterCommand("!stealdelay", ChangeDelays);
-            pluginManager.RegisterCommand("!bribedelay", ChangeDelays);
-            pluginManager.RegisterCommand("!cookiedelay", ChangeDelays);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, ChangeDelays,
+                    "!bribedelay",
+                    "!cookiedelay"
+                    ) { UserChannelCooldown = 5 });
 
-            pluginManager.RegisterCommand("!addcookie", AddCookieFlavor);
-            pluginManager.RegisterCommand("!newcookie", AddCookieFlavor);
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, AddCookieFlavor,
+                    "!addcookie",
+                    "!newcookie"
+                    ) { UserChannelCooldown = 5 });
 
-            pluginManager.RegisterCommand("!dbcookiecount", DisplayDatabaseCookieCount);
-            pluginManager.RegisterCommand("!top10", DisplayTop10);
+            pluginManager.RegisterCommand(
+                 new PluginManager.OnMessageAction(this, DisplayDatabaseCookieCount,
+                     "!dbcookiecount"
+                     ));
+
+            pluginManager.RegisterCommand(
+             new PluginManager.OnMessageAction(this, DisplayTop10,
+                 "!top10"
+                 ) { ChannelCooldown = 30 });
+
 
         }
-
-
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
         {
@@ -145,6 +176,8 @@ namespace CitiBot.Plugins.CookieGiver
         }
         private void DisplayDatabaseCookieCount(TwitchClient client, TwitchMessage message)
         {
+            if (message.UserType < TwitchUserTypes.Citillara)
+                return;
             client.SendMessage(message.Channel, "Database contains {0} cookies", CookieFlavour.GetCookieCount());
         }
         private void DisplayTop10(TwitchClient client, TwitchMessage message)
@@ -169,12 +202,8 @@ namespace CitiBot.Plugins.CookieGiver
             }
             client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/{0}/cookies/flavours", message.Channel.ToLowerInvariant().Replace("#", ""));
         }
-        DateTime lastDisplayTop = DateTime.MinValue;
         private void DisplayTop(TwitchClient client, TwitchMessage message, int count)
         {
-            if (lastDisplayTop.AddMinutes(1) > DateTime.Now)
-                return;
-            lastDisplayTop = DateTime.Now;
 
             var top_10 = CookieUser.GetChannelTopUsers(message.Channel, count);
 
@@ -302,8 +331,10 @@ namespace CitiBot.Plugins.CookieGiver
                 quantity = m_random.Next(10, 20);
             else if (picker < 90)
                 quantity = m_random.Next(20, 40);
-            else
+            else if( picker < 95)
                 quantity = m_random.Next(40, 80);
+            else
+                quantity = m_random.Next(80, 101);
 
             if (forcedCookies != -1)
                 quantity = forcedCookies;
@@ -332,9 +363,13 @@ namespace CitiBot.Plugins.CookieGiver
             else if (split[0].Contains("wrcookie"))
                 flavor = "World Record cookie";
             else if (split[0].Contains("lovecookie"))
-                flavor = "cookie of Love";
+                flavor = "cookie of Love <3 ";
             else if (split[0].Contains("crashcookie"))
                 flavor = "crashing cookie";
+            else if (split[0].Contains("morningcookie"))
+                flavor = "morning cookie";
+            else if (split[0].Contains("eveningcookie"))
+                flavor = "evening cookie";
 
 
             string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target, modifier);
@@ -458,99 +493,6 @@ namespace CitiBot.Plugins.CookieGiver
                 target.Save();
             }
         }
-        private void StealCookies(TwitchClient client, TwitchMessage message)
-        {
-            if (message.IsWhisper)
-            {
-                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
-            }
-            if (message.Args.Length < 2)
-            {
-                client.SendMessage(message.Channel, "Usage : !stealcookies <target>");
-                return;
-            }
-
-            var stealer = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
-            var channel = CookieChannel.GetChannel(message.Channel);
-            if (stealer.LastSteal.AddSeconds(channel.StealDelay) > DateTime.Now && message.UserType < TwitchUserTypes.Developper)
-            {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you can only steal every {1} seconds", message.SenderDisplayName, channel.StealDelay);
-                return;
-            }
-
-            var target = CookieUser.GetUser(message.Channel, message.Args[1]);
-            if (target.CookieReceived == 0)
-            {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but {1} doesn't have any cookies", message.SenderDisplayName, message.Args[1]);
-                return;
-            }
-
-            decimal scookies = (decimal)stealer.CookieReceived;
-            decimal tcookies = (decimal)target.CookieReceived;
-            decimal chance = 500m;
-            if (scookies > tcookies)
-            {
-                chance -= ((scookies - tcookies) / scookies) * 500m;
-            }
-            else
-            {
-                chance += ((tcookies - scookies) / tcookies) * 500m;
-            }
-
-            chance *= 0.80m;
-            stealer.LastSteal = DateTime.Now;
-            decimal failchance = 1000m - chance;
-            decimal critfailchance = failchance * 0.30m;
-            int rand = m_random.Next(1, 1000);
-            if (rand > failchance)
-            {
-                // success
-                int amount = GetPercentageOfCookies(target.CookieReceived, m_random.Next(1, 5));
-                stealer.CookieReceived += amount;
-                target.CookieReceived -= amount;
-                stealer.Save();
-                target.Save();
-                client.SendMessage(message.Channel, "{0} managed to steal {1} cookies to {2} !", stealer.TwitchUser.BusinessDisplayName, amount,
-                    target.TwitchUser.BusinessDisplayName ?? message.Args[1]);
-                
-            }
-            else if (rand > critfailchance || stealer.CookieReceived == 0)
-            {
-                // fail
-                client.SendMessage(message.Channel, "{0} didn't managed to steal any cookies this time", stealer.TwitchUser.BusinessDisplayName);
-            }
-            else
-            {
-                // critical fail;
-                int yrand = m_random.Next(1, 100);
-                int amount = GetPercentageOfCookies(stealer.CookieReceived, m_random.Next(1, 5));
-                bool doYoshi = true;
-                if (yrand > 50)
-                {
-                    var list = CookieUser.GetChannelUserIdsWithExclusion(message.Channel, new List<Int32>() { target.Id, stealer.Id });
-                    if (list.Count() > 0)
-                    {
-                        doYoshi = false;
-                        int rnd = m_random.Next(0, list.Count());
-                        var newtarget = CookieUser.GetUser(list.Skip(rnd).Take(1).First());
-                        client.SendMessage(message.Channel, "Critical fail ! {0} tumbles and lose his/her cookie purse near {1} who steals {2} of them before running away", stealer.TwitchUser.BusinessDisplayName, newtarget.TwitchUser.BusinessDisplayName, amount);
-                        newtarget.CookieReceived += amount;
-                        stealer.CookieReceived -= amount;
-                        newtarget.Save();
-                        stealer.Save();
-                    }
-                    
-                }
-                if(doYoshi)
-                {
-                    client.SendMessage(message.Channel, "Critical fail ! {0} tumbles and lose his/her cookie purse near a yoshi who eats {1} of them before running away", stealer.TwitchUser.BusinessDisplayName, amount);
-                    stealer.CookieReceived -= amount;
-                    stealer.Save();
-                }
-            }
-
-
-        }
 
         private void ChangeDelays(TwitchClient client, TwitchMessage message)
         {
@@ -589,6 +531,33 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
+
+        private void StartPoll(TwitchClient client, TwitchMessage message)
+        {
+            var poll = CookiePoll.GetLastestPoll(message.Channel);
+            if (message.UserType < TwitchUserTypes.Broadcaster)
+            {
+                return;
+            }
+            if (poll == null || poll.Status == CookiePoll.State.Deleted || poll.Status == CookiePoll.State.Finished)
+            {
+                client.SendMessage(message.Channel, "No poll is ready to start. To create a new poll, please use !newpoll");
+                return;
+            }
+            if (poll.Status == CookiePoll.State.Running)
+            {
+                client.SendMessage(message.Channel, "Poll '{0}' is alrady in progress", poll.Title);
+                return;
+            }
+            poll.Start();
+            client.SendMessage(message.Channel, "Poll '{0}' started ! use !cookievote <option> <number_of_cookies> to vote for an option !", poll.Title);
+
+        }
+        private void EndPoll(TwitchClient client)
+        {
+
+        }
+
 
         public static int GetPercentageOfCookies(int cookies, int percentage)
         {
@@ -709,5 +678,44 @@ namespace CitiBot.Plugins.CookieGiver
             return true;
         }
 
+        class PollThread
+        {
+            private ManualResetEvent wait = new ManualResetEvent(false);
+            private bool run = true;
+            private TwitchClient Client;
+            private string Channel;
+
+            public PollThread(TwitchClient client, string channel)
+            {
+                this.Client = client;
+                this.Channel = channel;
+                new Thread(new ThreadStart(Tick)).Start();
+            }
+
+            public void Close()
+            {
+                run = false;
+                wait.Set();
+            }
+
+            public void Tick()
+            {
+                while (true)
+                {
+                    if (!run)
+                        return;
+
+                    var poll = CookiePoll.GetLastestPoll(Channel);
+
+                    if (poll.Status != CookiePoll.State.Running)
+                        return;
+
+                    
+
+
+                }
+
+            }
+        }
     }
 }

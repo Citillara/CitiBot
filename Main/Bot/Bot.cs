@@ -10,7 +10,9 @@ namespace CitiBot.Main
 {
     public class Bot
     {
-        private BotSettings m_BotSettings;
+        private int m_BotId;
+        private string m_Name;
+        private string m_Password;
         private PluginManager m_PluginManager;
         private TwitchClient m_TwitchClient;
 
@@ -20,14 +22,16 @@ namespace CitiBot.Main
         public Bot(BotSettings settings)
         {
             m_PluginManager = new PluginManager();
-            m_BotSettings = settings;
-            m_BotSettings.Plugins.ToList().ForEach(p => m_PluginManager.AddPlugin(p.PluginName));
+            m_BotId = settings.Id;
+            m_Name = settings.Name;
+            m_Password = settings.Password;
+            settings.Plugins.ToList().ForEach(p => m_PluginManager.AddPlugin(p.PluginName));
             m_PluginManager.LoadAllPlugins();
         }
 
         public void Start()
         {
-            m_TwitchClient = new TwitchClient(m_BotSettings.Name, m_BotSettings.Password);
+            m_TwitchClient = new TwitchClient(m_Name, m_Password);
             m_TwitchClient.OnDisconnect += m_TwitchClient_OnDisconnect;
             m_TwitchClient.OnJoin += m_TwitchClient_OnJoin;
             m_TwitchClient.OnMessage += m_TwitchClient_OnMessage;
@@ -40,7 +44,7 @@ namespace CitiBot.Main
 
         void m_TwitchClient_OnPerform(TwitchClient sender)
         {
-            m_BotSettings.Channels.ToList().ForEach(c => sender.Join(c.Channel));
+             BotSettings.GetById(m_BotId).Channels.ToList().ForEach(c => sender.Join(c.Channel));
         }
 
         void m_TwitchClient_OnMessage(TwitchClient sender, Twitch.Models.TwitchMessage args)
@@ -50,8 +54,13 @@ namespace CitiBot.Main
 
         void m_TwitchClient_OnJoin(TwitchClient sender, Twitch.Models.TwitchClientOnJoinEventArgs args)
         {
-            if(args.IsMyself && m_BotSettings.Channels.Where(c => c.Channel == args.Channel).FirstOrDefault().Greetings == 1)
-                sender.SendMessage(args.Channel, "Joined");
+            if (args.IsMyself)
+            {
+                if (BotSettings.GetById(m_BotId).GetChannel(args.Channel).Greetings == BotChannel.GreetingsTypes.Simple)
+                {
+                    sender.SendMessage(args.Channel, "Joined");
+                }
+            }
         }
 
         void m_TwitchClient_OnPart(TwitchClient sender, Twitch.Models.TwitchClientOnPartEventArgs args)
@@ -62,6 +71,7 @@ namespace CitiBot.Main
         
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
+            Console.WriteLine(DateTime.Now.ToString() + " Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
             if (!wasManualDisconnect && m_ReconnectAttempts < 3)
             {
                 Start();
@@ -75,7 +85,7 @@ namespace CitiBot.Main
             var settings = BotSettings.GetAllBots();
             foreach (var bs in settings)
             {
-                Console.WriteLine("Preparing " + bs.Name);
+                Console.WriteLine(DateTime.Now.ToString() +  " + Preparing " + bs.Name);
                 var bot = new Bot(bs);
                 list.Add(bot);
                 bot.Start();
