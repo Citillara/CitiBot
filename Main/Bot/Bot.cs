@@ -37,14 +37,20 @@ namespace CitiBot.Main
             m_TwitchClient.OnMessage += m_TwitchClient_OnMessage;
             m_TwitchClient.OnPart += m_TwitchClient_OnPart;
             m_TwitchClient.OnPerform += m_TwitchClient_OnPerform;
-            m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Info;
+            if (Environment.MachineName == "KERNEL01")
+                m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Debug;
+            else
+                m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Info;
             m_TwitchClient.AutoDetectSendWhispers = true;
             m_TwitchClient.Connect();
         }
 
         void m_TwitchClient_OnPerform(TwitchClient sender)
         {
-             BotSettings.GetById(m_BotId).Channels.ToList().ForEach(c => sender.Join(c.Channel));
+            var channel_list = BotSettings.GetById(m_BotId).Channels;
+            channel_list.Where(c => c.AutoJoin == BotChannel.AutoJoinSettings.Yes)
+                .ToList()
+                .ForEach(c => sender.Join(c.Channel));
         }
 
         void m_TwitchClient_OnMessage(TwitchClient sender, Twitch.Models.TwitchMessage args)

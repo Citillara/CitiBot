@@ -191,7 +191,7 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
                 return;
             }
-            client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/{0}/cookies", message.Channel.ToLowerInvariant().Replace("#", ""));
+            client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/c/{0}/cookies", message.Channel.ToLowerInvariant().Replace("#", ""));
         }
         private void DisplayCookieFlavours(TwitchClient client, TwitchMessage message)
         {
@@ -200,7 +200,7 @@ namespace CitiBot.Plugins.CookieGiver
                 client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
                 return;
             }
-            client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/{0}/cookies/flavours", message.Channel.ToLowerInvariant().Replace("#", ""));
+            client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/c/{0}/cookies/flavours", message.Channel.ToLowerInvariant().Replace("#", ""));
         }
         private void DisplayTop(TwitchClient client, TwitchMessage message, int count)
         {
@@ -329,12 +329,12 @@ namespace CitiBot.Plugins.CookieGiver
                 quantity = m_random.Next(1, 10);
             else if (picker < 70)
                 quantity = m_random.Next(10, 20);
-            else if (picker < 90)
+            else if (picker < 85)
                 quantity = m_random.Next(20, 40);
             else if( picker < 95)
-                quantity = m_random.Next(40, 80);
+                quantity = m_random.Next(40, 90);
             else
-                quantity = m_random.Next(80, 101);
+                quantity = m_random.Next(90, 101);
 
             if (forcedCookies != -1)
                 quantity = forcedCookies;
@@ -346,9 +346,12 @@ namespace CitiBot.Plugins.CookieGiver
             target_user_database.CookieReceived += quantity;
             target_user_database.Save();
 
-
             string modifier = "";
-            if (quantity > 40)
+            if (quantity > 95)
+                modifier = ". WHAT THE PEMP !";
+            else if (quantity > 90)
+                modifier = ". ROOOOOOO !";
+            else if (quantity > 40)
                 modifier = ". Incredible !";
             else if (quantity > 20)
                 modifier = ". Awesome !";
@@ -388,7 +391,7 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
             var sender = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
-            var target = CookieUser.GetUser(message.Channel, message.Args[1]);
+            var target = CookieUser.GetUser(message.Channel, message.Args[1].Replace("@", ""));
 
             if (sender == null || sender.CookieReceived < amount)
             {
@@ -442,7 +445,7 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
 
-            var target = CookieUser.GetUser(message.Channel, message.Args[1].ToLowerInvariant());
+            var target = CookieUser.GetUser(message.Channel, message.Args[1].ToLowerInvariant().Replace("@", ""));
 
             if (target == null || target.CookieReceived <= 0)
             {

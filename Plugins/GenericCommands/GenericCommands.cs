@@ -167,8 +167,8 @@ namespace CitiBot.Plugins.GenericCommands
                 return;
             }
             TimeSpan ts1, ts2;
-            bool bts1 = TimeSpan.TryParse(message.Args[1], out ts1);
-            bool bts2 = TimeSpan.TryParse(message.Args[2], out ts2);
+            bool bts1 = TryParseTimeSpan(message.Args[1], out ts1);
+            bool bts2 = TryParseTimeSpan(message.Args[2], out ts2);
             if (!bts1 || !bts2)
             {
                 return;
@@ -184,6 +184,39 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoVersion(TwitchClient sender, TwitchMessage message)
         {
             sender.SendMessage(message.Channel, "IRC {0}, Twitch {1}, CitiBot {2}", Irc.IrcClient.Version, TwitchClient.Version, Program.Version);
+        }
+
+        private bool TryParseTimeSpan(string str, out TimeSpan ts)
+        {
+            ts = TimeSpan.MinValue;
+            var spl = str.Split(new char[] { ':' });
+            bool b1, b2, b3;
+            int i1, i2, i3;
+            int i = 0;
+            if (spl.Length < 2)
+                return false;
+            if (spl.Length == 2)
+            {
+                b1 = int.TryParse(spl[0], out i1);
+                b2 = int.TryParse(spl[1], out i2);
+                if (!b1 || !b2)
+                    return false;
+                ts = new TimeSpan(0, i1, i2);
+            }
+            else
+            {
+                b1 = int.TryParse(spl[0], out i1);
+                b2 = int.TryParse(spl[1], out i2);
+                b3 = int.TryParse(spl[2], out i3);
+                if (!b1 || !b2 || !b3)
+                    return false;
+                ts = new TimeSpan(i1, i2, i3);
+
+            }
+
+
+            return true;
+            
         }
 
         private static void RepeatAction(int repeatCount, Action action, int delay = 200)

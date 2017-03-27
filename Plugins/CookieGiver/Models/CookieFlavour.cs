@@ -58,6 +58,8 @@ namespace CitiBot.Plugins.CookieGiver.Models
                 AddedDate = DateTime.Now,
                 isNew = true
             };
+
+            c.Save();
         }
 
         private void Save()
