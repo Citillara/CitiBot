@@ -66,6 +66,7 @@ namespace CitiBot.Plugins.GenericCommands
                 {
                     if (message.Args[1].StartsWith("#"))
                     {
+                        
                         sender.Join(message.Args[1]);
                         sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", message.Args[1], message.SenderDisplayName);
                     }

@@ -234,7 +234,7 @@ namespace CitiBot.Plugins.CookieGiver
             bool allowedThroughWhisper = false;
             string target = message.SenderDisplayName;
             string channel = message.Channel;
-            string[] split = message.Message.Split(' ');            
+            string[] split = message.Message.Split(' ');
             if (split.Length > 1)
             {
                 // Sends the cookie to someone else. Usage : !cookie <target>
@@ -316,7 +316,7 @@ namespace CitiBot.Plugins.CookieGiver
                 if (m_list_of_cookies_ids.Count() == 0)
                     m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
             }
-            
+
 
             int next = m_random.Next(0, m_list_of_cookies_ids.Count());
 
@@ -331,7 +331,7 @@ namespace CitiBot.Plugins.CookieGiver
                 quantity = m_random.Next(10, 20);
             else if (picker < 85)
                 quantity = m_random.Next(20, 40);
-            else if( picker < 95)
+            else if (picker < 95)
                 quantity = m_random.Next(40, 90);
             else
                 quantity = m_random.Next(90, 101);
@@ -556,10 +556,6 @@ namespace CitiBot.Plugins.CookieGiver
             client.SendMessage(message.Channel, "Poll '{0}' started ! use !cookievote <option> <number_of_cookies> to vote for an option !", poll.Title);
 
         }
-        private void EndPoll(TwitchClient client)
-        {
-
-        }
 
 
         public static int GetPercentageOfCookies(int cookies, int percentage)
@@ -713,8 +709,38 @@ namespace CitiBot.Plugins.CookieGiver
                     if (poll.Status != CookiePoll.State.Running)
                         return;
 
-                    
+                    var timeleft = new TimeSpan(poll.CreationTime.AddSeconds(poll.Duration).Ticks - DateTime.Now.Ticks);
 
+                    if (timeleft.TotalSeconds < 0)
+                    {
+                        poll.Status = CookiePoll.State.Finished;
+                        Client.SendMessage(Channel, "Poll is now finished");
+                        var options_ordered = poll.PollOptions.OrderByDescending(o => o.Votes).ToList();
+                        Client.SendMessage(Channel, "1st : {0} with {1} cookies", options_ordered[0].Text, options_ordered[0].Votes);
+                        if (options_ordered.Count > 1)
+                            Client.SendMessage(Channel, "2nd : {0} with {1} cookies", options_ordered[1].Text, options_ordered[1].Votes);
+                        if (options_ordered.Count > 2)
+                            Client.SendMessage(Channel, "3rd : {0} with {1} cookies", options_ordered[2].Text, options_ordered[2].Votes);
+
+                        return;
+                    }
+                    else
+                    {
+                        int mins = (int)timeleft.TotalMinutes;
+                        if (mins == 0)
+                        {
+                            int seconds_left = (int)Math.Round(timeleft.TotalSeconds, MidpointRounding.AwayFromZero);
+                            Client.SendMessage(Channel, "{0} seconds remaining", seconds_left);
+                        }
+                        else
+                        {
+                            int minutes_left = (int)timeleft.TotalMinutes;
+                            Client.SendMessage(Channel, "{0} minutes remaining", minutes_left);
+                        }
+
+                        int waittime =(int) timeleft.TotalMilliseconds / 2;
+                        wait.WaitOne(waittime);
+                    }
 
                 }
 

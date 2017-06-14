@@ -77,6 +77,9 @@ namespace CitiBot.Main
         
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
+            Console.WriteLine();
+            Console.WriteLine("--------------------------------------------");
+            Console.WriteLine();
             Console.WriteLine(DateTime.Now.ToString() + " Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
             if (!wasManualDisconnect && m_ReconnectAttempts < 3)
             {

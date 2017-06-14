@@ -40,12 +40,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         private static CookieUser New(string channel, string username, long? twitchId = null, string displayName = null)
         {
-            var twitchUser = TwitchUser.GetUser(username);
-            if (twitchUser == null)
-            {
-                twitchUser = TwitchUser.New(username, twitchId, displayName);
-                twitchUser.Save();
-            }
+            var twitchUser = TwitchUser.GetOrCreateUser(twitchId, username, displayName);
             return new CookieUser()
             {
                 isNew = true,
@@ -56,11 +51,36 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public static CookieUser GetUser(string channel, string username, long? twitchId = null, string displayName = null)
         {
-            var val = Registry.Instance.CookieUsers.Include("TwitchUser").Where(c => c.Channel == channel && c.TwitchUser.Name == username)
-                .FirstOrDefault();
+            CookieUser val = null;
+            if (twitchId != null)
+            {
+                val = Registry.Instance.CookieUsers.Include("TwitchUser")
+                    .Where(c => c.Channel == channel && c.TwitchUser.TwitchId == twitchId)
+                    .FirstOrDefault();
+            }
+            if (val == null && username != null)
+            {
+                val = Registry.Instance.CookieUsers.Include("TwitchUser")
+                    .Where(c => c.Channel == channel && c.TwitchUser.Name == username)
+                    .FirstOrDefault();
+            }
+            if (val == null && displayName != null)
+            {
+                val = Registry.Instance.CookieUsers.Include("TwitchUser")
+                    .Where(c => c.Channel == channel && c.TwitchUser.DisplayName == displayName)
+                    .FirstOrDefault();
+            }
+            if (val == null && displayName != null)
+            {
+
+                val = Registry.Instance.CookieUsers.Include("TwitchUser")
+                    .Where(c => c.Channel == channel && c.TwitchUser.Name == displayName.ToLowerInvariant())
+                    .FirstOrDefault();
+            }
             if (val == null)
+            {
                 val = New(channel, username, twitchId, displayName);
-            val.TwitchUser.CheckAndUpdate(displayName, twitchId);
+            }
             return val;
         }
         public static CookieUser GetUser(int id)

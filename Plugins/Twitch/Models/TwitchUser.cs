@@ -36,7 +36,7 @@ namespace CitiBot.Plugins.Twitch.Models
 
         }
 
-        public static TwitchUser New(string name, long? twitchId, string displayName = null)
+        private static TwitchUser New(string name, long? twitchId, string displayName = null)
         {
             return new TwitchUser()
             {
@@ -47,9 +47,37 @@ namespace CitiBot.Plugins.Twitch.Models
             };
         }
 
-        public static TwitchUser GetUser(string name)
+        public static TwitchUser GetOrCreateUser(long? twitchId, string username, string displayName)
         {
-            return Registry.Instance.TwitchUsers.Where(u => u.Name == name).FirstOrDefault();
+            TwitchUser val = null;
+            if (twitchId.HasValue)
+            {
+                val = Registry.Instance.TwitchUsers.Where(t => t.TwitchId == twitchId).FirstOrDefault();
+            }
+            if (val == null && username != null)
+            {
+                val = Registry.Instance.TwitchUsers.Where(t => t.Name == username).FirstOrDefault();
+            }
+
+            if (val == null && username != null)
+            {
+                val = Registry.Instance.TwitchUsers.Where(t => t.DisplayName == displayName).FirstOrDefault();
+            }
+            if (val == null && username != null)
+            {
+                val = Registry.Instance.TwitchUsers.Where(t => t.Name == displayName.ToLowerInvariant()).FirstOrDefault();
+            }
+
+            if (val == null)
+            {
+                val = New(username, twitchId, displayName);
+                val.Save();
+            }
+            else
+            {
+                val.CheckAndUpdate(username, displayName, twitchId);
+            }
+            return val;
         }
 
         public static TwitchUser GetUser(int id)
@@ -62,9 +90,14 @@ namespace CitiBot.Plugins.Twitch.Models
             return Registry.Instance.TwitchUsers.Where(c => c.TwitchId == id).FirstOrDefault();
         }
 
-        public void CheckAndUpdate(string displayName, long? twitchId = null)
+        private void CheckAndUpdate(string username, string displayName, long? twitchId = null)
         {
             bool doSave = false;
+            if (!string.IsNullOrEmpty(username) && !Name.Equals(username))
+            {
+                doSave = true;
+                Name = username;
+            }
             if (!string.IsNullOrEmpty(displayName) && !BusinessDisplayName.Equals(displayName))
             {
                 doSave = true;
