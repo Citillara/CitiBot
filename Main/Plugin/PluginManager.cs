@@ -46,19 +46,47 @@ namespace CitiBot.Main
             command.Commands.ForEach(c => m_commands.Add(c, command));
         }
 
-        public void OnMessage(TwitchClient client, TwitchMessage message)
+        public void OnNotice(TwitchClient client, TwitchNotice notice)
         {
-            if (!message.Message.StartsWith("!"))
-                return;
-            var split = message.Message.Split(' ');
-            string msg = split[0];
-
             try
             {
-                OnMessageAction action;
-                if (m_commands.TryGetValue(msg, out action))
+                m_plugins.ForEach(p => p.OnNotice(client, notice));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------");
+                Console.WriteLine();
+                Console.WriteLine(DateTime.Now.ToString());
+                Console.WriteLine();
+                Console.WriteLine(notice);
+                Console.WriteLine();
+                Console.WriteLine(e.ToString());
+                Console.WriteLine();
+                Console.WriteLine("--------------------------------------------");
+                Console.WriteLine();
+            }
+        }
+
+        public void OnMessage(TwitchClient client, TwitchMessage message)
+        {
+            try
+            {
+                if (message.BitsSent != 0)
                 {
-                    action.OnMessage(client, message);
+                    m_plugins.ForEach(p => p.OnBitsSent(client, message));
+                }
+
+                if (message.Message.StartsWith("!"))
+                {
+                    var split = message.Message.Split(' ');
+                    string msg = split[0];
+
+                    OnMessageAction action;
+                    if (m_commands.TryGetValue(msg, out action))
+                    {
+                        action.OnMessage(client, message);
+                    }
                 }
             }
             catch(Exception e)
@@ -92,6 +120,12 @@ namespace CitiBot.Main
 
             private Dictionary<string, DateTime> m_cooldowns = new Dictionary<string,DateTime>();
 
+            public OnMessageAction(Plugin plugin, Action<TwitchClient, TwitchMessage> action)
+            {
+                this.Plugin = plugin;
+                this.Action = action;
+                this.Commands = new List<string>();
+            }
             public OnMessageAction(Plugin plugin, Action<TwitchClient, TwitchMessage> action, string command)
             {
                 this.Plugin = plugin;

@@ -22,5 +22,15 @@ namespace CitiBot.Main
         {
 
         }
+
+        public virtual void OnBitsSent(TwitchClient sender, TwitchMessage message)
+        {
+
+        }
+
+        public virtual void OnNotice(TwitchClient sender, TwitchNotice notice)
+        {
+
+        }
     }
 }

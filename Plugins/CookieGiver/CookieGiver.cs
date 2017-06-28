@@ -89,6 +89,12 @@ namespace CitiBot.Plugins.CookieGiver
                     "!cookiedelay"
                     ) { UserChannelCooldown = 5 });
 
+            
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, ChangeStringSettings,
+                    "!setsubgreetings"
+                    ) { UserChannelCooldown = 5 });
+
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, AddCookieFlavor,
                     "!addcookie",
@@ -104,8 +110,14 @@ namespace CitiBot.Plugins.CookieGiver
              new PluginManager.OnMessageAction(this, DisplayTop10,
                  "!top10"
                  ) { ChannelCooldown = 30 });
+        }
 
-
+        public override void OnNotice(TwitchClient sender, TwitchNotice notice)
+        {
+            if (notice.IsSub)
+            {
+                OnSub(sender, notice);
+            }
         }
 
         private void AddCookieFlavor(TwitchClient client, TwitchMessage message)
@@ -227,6 +239,29 @@ namespace CitiBot.Plugins.CookieGiver
             client.SendMessage(message.Channel, sb.ToString());
 
         }
+        /*private void OnBitsSent(TwitchClient client, TwitchMessage message)
+        {
+
+            int cookieCheers = CookieChannel.GetChannel(message.Channel).CookieCheers;
+            string senderDatabaseKey = message.SenderName;
+            string channel = message.Channel;
+            var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey, message.UserId, message.SenderDisplayName);
+            if (cookieCheers > 0)
+            {
+                int amount = cookieCheers * (int)message.BitsSent;
+                GiveCookies(client, channel, sender_user_database, sender_user_database, amount);
+            }
+        }*/
+        private void OnSub(TwitchClient client, TwitchNotice notice)
+        {
+            var channel = CookieChannel.GetChannel(notice.Channel);
+            if (!string.IsNullOrEmpty(channel.SubGreetings))
+            {
+                string greetings = channel.SubGreetings.Replace("$user", notice.DisplayName);
+                client.SendMessage(notice.Channel, greetings);
+            }
+        }
+
         private void GiveCookie(TwitchClient client, TwitchMessage message)
         {
             int forcedCookies = -1;
@@ -300,9 +335,25 @@ namespace CitiBot.Plugins.CookieGiver
                 }
             }
 
-            // Sender is in database
-            sender_user_database.LastSend = DateTime.Now;
-            sender_user_database.Save();
+
+            var target_user_database = CookieUser.GetUser(channel, targetDatabaseKey);
+
+            GiveCookies(client, channel, sender_user_database, target_user_database, forcedCookies, split[0]);
+        }
+
+        private void GiveCookies(TwitchClient client, string channel, CookieUser sender, CookieUser target, int forcedCookies = -1, string forcedFlavour = "")
+        {
+            // Set the last sent
+            if (sender.Id != target.Id)
+            {
+                sender.LastSend = DateTime.Now;
+                sender.Save();
+            }
+            else
+            {
+                target.LastSend = DateTime.Now;
+            }
+
 
             // Select a cookie
             IEnumerable<Int32> m_list_of_cookies_ids;
@@ -312,7 +363,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                m_list_of_cookies_ids = CookieFlavour.GetChannelCookies(message.Channel);
+                m_list_of_cookies_ids = CookieFlavour.GetChannelCookies(channel);
                 if (m_list_of_cookies_ids.Count() == 0)
                     m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
             }
@@ -340,11 +391,10 @@ namespace CitiBot.Plugins.CookieGiver
                 quantity = forcedCookies;
 
 
-            var target_user_database = CookieUser.GetUser(channel, targetDatabaseKey);
             // User is in the database
-            target_user_database.LastReceived = DateTime.Now;
-            target_user_database.CookieReceived += quantity;
-            target_user_database.Save();
+            target.LastReceived = DateTime.Now;
+            target.CookieReceived += quantity;
+            target.Save();
 
             string modifier = "";
             if (quantity > 95)
@@ -361,26 +411,26 @@ namespace CitiBot.Plugins.CookieGiver
             int cookie_id_selected = m_list_of_cookies_ids.ToArray()[next];
 
             string flavor = CookieFlavour.GetCookie(cookie_id_selected).Text.ToLowerInvariant();
-            if (split[0].Contains("welcomecookie"))
+            if (forcedFlavour.Contains("welcomecookie"))
                 flavor = "welcome cookie";
-            else if (split[0].Contains("wrcookie"))
+            else if (forcedFlavour.Contains("wrcookie"))
                 flavor = "World Record cookie";
-            else if (split[0].Contains("lovecookie"))
+            else if (forcedFlavour.Contains("lovecookie"))
                 flavor = "cookie of Love <3 ";
-            else if (split[0].Contains("crashcookie"))
+            else if (forcedFlavour.Contains("crashcookie"))
                 flavor = "crashing cookie";
-            else if (split[0].Contains("morningcookie"))
+            else if (forcedFlavour.Contains("morningcookie"))
                 flavor = "morning cookie";
-            else if (split[0].Contains("eveningcookie"))
+            else if (forcedFlavour.Contains("eveningcookie"))
                 flavor = "evening cookie";
 
 
-            string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target, modifier);
+            string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target.TwitchUser.BusinessDisplayName, modifier);
             if (quantity > 1)
                 msg = msg.Replace("cookie", "cookies");
             client.SendAction(channel, msg);
-
         }
+
         private void SendCookies(TwitchClient client, TwitchMessage message)
         {
             int amount = 0;
@@ -522,6 +572,84 @@ namespace CitiBot.Plugins.CookieGiver
                             case "!bribedelay":
                                 channelp.BribeDelay = time;
                                 client.SendMessage(message.Channel, "Bribe delay has been set to {0} seconds", time);
+                                break;
+                            default: break;
+                        }
+                        channelp.Save();
+                    }
+                }
+            }
+            else
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+            }
+        }
+        private void ChangeStringSettings(TwitchClient client, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+            {
+                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                return;
+            }
+
+            if (message.UserType < TwitchUserTypes.Broadcaster)
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, this command is only for the broadcaster.", message.SenderDisplayName);
+                return;
+            }
+
+
+            string msg = message.Message.Replace("\"", "").Trim();
+
+            if (msg.IndexOf(' ') == -1)
+            {
+                client.SendMessage(message.Channel, "You must specify a non-empty value");
+                return;
+            }
+
+            string sub = msg.Substring(msg.IndexOf(' '));
+
+            var channelp = CookieChannel.GetChannel(message.Channel);
+            switch (message.Command)
+            {
+                case "!setsubgreetings":
+                    channelp.SubGreetings = sub;
+                    client.SendMessage(message.Channel, "New subscribers message has been set to : " + sub);
+                    break;
+                default: break;
+            }
+            channelp.Save();
+
+        }
+        private void ChangeNumericSettings(TwitchClient client, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+            {
+                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                return;
+            }
+
+            if (message.UserType >= TwitchUserTypes.Broadcaster)
+            {
+                string[] split = message.Message.Split(' ');
+                int val = -1;
+                if (split.Length > 1 && int.TryParse(split[1], out val))
+                {
+                    if (val > -1)
+                    {
+                        var channelp = CookieChannel.GetChannel(message.Channel);
+                        switch (message.Command)
+                        {
+                            case "!cookiecheers":
+                                channelp.CookieCheers = val;
+                                if (val == 0)
+                                {
+                                    client.SendMessage(message.Channel, "Cookie cheering has been disabled");
+                                }
+                                else
+                                {
+                                    client.SendMessage(message.Channel, "Cookie cheering factor has been set to {0}", val);
+                                }
                                 break;
                             default: break;
                         }

@@ -72,9 +72,9 @@ namespace CitiBot.Plugins.CookieGiver.Models
             }
             if (val == null && displayName != null)
             {
-
+                string lower = displayName.ToLowerInvariant();
                 val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.Name == displayName.ToLowerInvariant())
+                    .Where(c => c.Channel == channel && c.TwitchUser.Name == lower)
                     .FirstOrDefault();
             }
             if (val == null)
@@ -147,5 +147,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
             public int CookieReceived;
             public string DisplayName;
         }
+
     }
 }

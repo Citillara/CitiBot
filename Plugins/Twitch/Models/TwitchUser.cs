@@ -59,13 +59,14 @@ namespace CitiBot.Plugins.Twitch.Models
                 val = Registry.Instance.TwitchUsers.Where(t => t.Name == username).FirstOrDefault();
             }
 
-            if (val == null && username != null)
+            if (val == null && displayName != null)
             {
                 val = Registry.Instance.TwitchUsers.Where(t => t.DisplayName == displayName).FirstOrDefault();
             }
-            if (val == null && username != null)
+            if (val == null && displayName != null)
             {
-                val = Registry.Instance.TwitchUsers.Where(t => t.Name == displayName.ToLowerInvariant()).FirstOrDefault();
+                string lower = displayName.ToLowerInvariant();
+                val = Registry.Instance.TwitchUsers.Where(t => t.Name == lower).FirstOrDefault();
             }
 
             if (val == null)

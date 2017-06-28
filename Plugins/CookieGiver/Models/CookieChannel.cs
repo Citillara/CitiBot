@@ -20,7 +20,8 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual int CookieDelay { get; set; }
         public virtual int BribeDelay { get; set; }
         public virtual int StealDelay { get; set; }
-
+        public virtual int CookieCheers { get; set; }
+        public virtual string SubGreetings { get; set; }
 
         public virtual ICollection<CookiePoll> Polls { get; set; }
 
@@ -30,7 +31,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         {
             var r = Registry.Instance.CookieChannels.Where(d => d.Channel == channel).FirstOrDefault();
             if (r == null)
-                r = new CookieChannel() { Channel = channel, isNew = true, BribeDelay = 600, CookieDelay = 300, StealDelay = 600 };
+                r = new CookieChannel() { Channel = channel, isNew = true, BribeDelay = 600, CookieDelay = 300, StealDelay = 600, CookieCheers = 0 };
             return r;
         }
 
