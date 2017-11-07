@@ -54,16 +54,12 @@ namespace CitiBot.Main
             }
             catch (Exception e)
             {
-                Console.WriteLine();
-                Console.WriteLine("--------------------------------------------");
-                Console.WriteLine();
-                Console.WriteLine(DateTime.Now.ToString());
-                Console.WriteLine();
+                Console.Write("[");
+                Console.Write(DateTime.Now.ToString());
+                Console.Write("] ");
                 Console.WriteLine(notice);
                 Console.WriteLine();
                 Console.WriteLine(e.ToString());
-                Console.WriteLine();
-                Console.WriteLine("--------------------------------------------");
                 Console.WriteLine();
             }
         }
@@ -91,16 +87,12 @@ namespace CitiBot.Main
             }
             catch(Exception e)
             {
-                Console.WriteLine();
-                Console.WriteLine("--------------------------------------------");
-                Console.WriteLine();
-                Console.WriteLine(DateTime.Now.ToString());
-                Console.WriteLine();
+                Console.Write("[");
+                Console.Write(DateTime.Now.ToString());
+                Console.Write("] ");
                 Console.WriteLine(message);
                 Console.WriteLine();
                 Console.WriteLine(e.ToString());
-                Console.WriteLine();
-                Console.WriteLine("--------------------------------------------");
                 Console.WriteLine();
             }
         }
@@ -113,10 +105,10 @@ namespace CitiBot.Main
 
             protected internal List<string> Commands = new List<string>();
 
-            public int GlobalCooldown = 0;
-            public int UserCooldown = 0;
-            public int UserChannelCooldown = 0;
-            public int ChannelCooldown = 0;
+            public int GlobalCooldown { get; set; }
+            public int UserCooldown { get; set; }
+            public int UserChannelCooldown { get; set; }
+            public int ChannelCooldown { get; set; }
 
             private Dictionary<string, DateTime> m_cooldowns = new Dictionary<string,DateTime>();
 

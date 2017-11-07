@@ -94,6 +94,15 @@ namespace CitiBot.Plugins.Twitch.Models
         private void CheckAndUpdate(string username, string displayName, long? twitchId = null)
         {
             bool doSave = false;
+            // Check if another user exists with same username
+            if (twitchId.HasValue && twitchId.Value != 0)
+            {
+                var other = Registry.Instance.TwitchUsers.Where(c => c.Name == username && c.Id != Id).FirstOrDefault();
+                if (other != null && !other.TwitchId.HasValue && other.TwitchId != 0)
+                {
+                    other.Delete();
+                }
+            }
             if (!string.IsNullOrEmpty(username) && !Name.Equals(username))
             {
                 doSave = true;
@@ -111,6 +120,13 @@ namespace CitiBot.Plugins.Twitch.Models
             }
             if(doSave)
                 Save();
+        }
+
+        public override void Delete()
+        {
+            foreach (var c in CookieUsers)
+                c.Delete();
+            base.Delete();
         }
 
         public virtual void Save()

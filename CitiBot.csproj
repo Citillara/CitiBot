@@ -53,9 +53,6 @@
     <Reference Include="EntityFramework">
       <HintPath>..\packages\EntityFramework.6.0.0\lib\net45\EntityFramework.dll</HintPath>
     </Reference>
-    <Reference Include="EntityFramework.SqlServer">
-      <HintPath>..\packages\EntityFramework.6.0.0\lib\net45\EntityFramework.SqlServer.dll</HintPath>
-    </Reference>
     <Reference Include="MySql.Data, Version=6.9.8.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>MySQL\MySql.Data.dll</HintPath>
@@ -99,6 +96,7 @@
     <Compile Include="Database\Registry.cs" />
     <Compile Include="Main\Extensions.cs" />
     <Compile Include="Main\Plugin\Plugin.cs" />
+    <Compile Include="Main\RNG.cs" />
     <Compile Include="Plugins\CookieGiver\CookieGiver.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CaloriesPerActivity.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieChannel.cs" />

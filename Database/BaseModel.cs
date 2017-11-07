@@ -11,10 +11,23 @@ namespace CitiBot.Database
 {
     public abstract class BaseModel<T> where T : class
     {
+        private bool hasBeenDeleted = false;
 
+        public virtual void Delete()
+        {
+            hasBeenDeleted = true;
+            T t = (T)(object)this;
+            Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Deleted;
+            Database.Registry.Instance.Set<T>().Remove(t);
+
+            Database.Registry.Instance.SaveChanges();
+        }
 
         protected void Save(bool isNew)
         {
+            if (hasBeenDeleted)
+                return;
+
             T t = (T)(object)this;
             if (isNew)
             {

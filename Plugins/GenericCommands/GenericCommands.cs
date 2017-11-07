@@ -58,7 +58,7 @@ namespace CitiBot.Plugins.GenericCommands
         {
             if (message.UserType < TwitchUserTypes.Developper)
             {
-                sender.SendWhisper(message.SenderName, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
+                //sender.SendWhisper(message.SenderName, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
             }
             else
             {
@@ -193,7 +193,6 @@ namespace CitiBot.Plugins.GenericCommands
             var spl = str.Split(new char[] { ':' });
             bool b1, b2, b3;
             int i1, i2, i3;
-            int i = 0;
             if (spl.Length < 2)
                 return false;
             if (spl.Length == 2)

@@ -66,6 +66,7 @@ namespace CitiBot.Main
 
         void m_TwitchClient_OnJoin(TwitchClient sender, Twitch.Models.TwitchClientOnJoinEventArgs args)
         {
+            m_ReconnectAttempts = 0;
             if (args.IsMyself)
             {
                 if (BotSettings.GetById(m_BotId).GetChannel(args.Channel).Greetings == BotChannel.GreetingsTypes.Simple)
@@ -83,14 +84,17 @@ namespace CitiBot.Main
         
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
-            Console.WriteLine();
-            Console.WriteLine("--------------------------------------------");
-            Console.WriteLine();
-            Console.WriteLine(DateTime.Now.ToString() + " Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
+            Console.WriteLine("[" + DateTime.Now.ToString() + "] Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
             if (!wasManualDisconnect && m_ReconnectAttempts < 3)
             {
+                m_TwitchClient.Disconnect();
                 Start();
                 m_ReconnectAttempts++;
+            }
+            else
+            {
+                Console.WriteLine("Maximum attempts reached, closing program");
+                Environment.Exit(1);
             }
         }
 

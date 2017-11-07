@@ -142,6 +142,11 @@ namespace CitiBot.Plugins.CookieGiver.Models
                 isNew = false;
         }
 
+        public override void Delete()
+        {
+            base.Delete();
+        }
+
         public class LightCookieUser
         {
             public int CookieReceived;

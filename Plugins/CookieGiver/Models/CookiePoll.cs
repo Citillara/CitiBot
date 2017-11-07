@@ -17,7 +17,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
         public virtual CookieChannel Channel { get; set; }
-        public virtual State Status { get; set; }
+        public virtual CookiePollState Status { get; set; }
         public virtual int Duration { get; set; }
         public virtual string Title { get; set; }
         public virtual DateTime StartTime { get; set; }
@@ -39,10 +39,10 @@ namespace CitiBot.Plugins.CookieGiver.Models
         {
             // First close all existing polls for that channel
             var running_polls = Registry.Instance.CookiePolls
-                .Where(p => p.Status == State.Initial || p.Status == State.Running);
+                .Where(p => p.Status == CookiePollState.Initial || p.Status == CookiePollState.Running);
             foreach (var poll in running_polls)
             {
-                poll.Status = State.Deleted;
+                poll.Status = CookiePollState.Deleted;
                 poll.Save();
             }
 
@@ -52,7 +52,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
                 CreationTime = DateTime.Now,
                 StartTime = DateTime.Now,
                 Duration = 300,
-                Status = State.Initial,
+                Status = CookiePollState.Initial,
                 Title = "",
                 PollOptions = new List<CookiePollOption>(),
                 isNew = true
@@ -67,9 +67,9 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public bool Start()
         {
-            if(this.Status == State.Initial && this.PollOptions != null && this.PollOptions.Count > 0)
+            if(this.Status == CookiePollState.Initial && this.PollOptions != null && this.PollOptions.Count > 0)
             {
-                this.Status = State.Running;
+                this.Status = CookiePollState.Running;
                 this.StartTime = DateTime.Now;
                 Save();
                 return true;
@@ -94,14 +94,14 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public void ClosePoll()
         {
-            this.Status = State.Finished;
+            this.Status = CookiePollState.Finished;
             this.Save();
         }
 
         public bool AddVotesToOption(int amount, int option)
         {
             // Notes : options are 0 based index
-            if (this.Status == State.Running  && this.PollOptions.Count >= option)
+            if (this.Status == CookiePollState.Running  && this.PollOptions.Count >= option)
             {
                 var p = this.PollOptions.OrderBy(pp => pp.Order).ElementAt(option - 1);
                 p.Votes += amount;
@@ -122,7 +122,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         }
 
 
-        public enum State
+        public enum CookiePollState
         {
             Initial = 0,
             Running = 1,

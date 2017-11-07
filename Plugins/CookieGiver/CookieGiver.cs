@@ -18,7 +18,6 @@ namespace CitiBot.Plugins.CookieGiver
     {
 
         private const int CAL_PER_COOKIE = 31;
-        private Random m_random = new Random();
         private DateTime m_previousSend = DateTime.MinValue;
 
         private List<Thread> m_threads = new List<Thread>();
@@ -314,13 +313,17 @@ namespace CitiBot.Plugins.CookieGiver
             if (message.UserType < TwitchUserTypes.Developper)
             {
 
+                var chan = CookieChannel.GetChannel(message.Channel);
+                int delay = chan.CookieDelay;
+
+
+
                 // Sender is in database
                 if (sender_user_database != null)
                 {
                     int delay_in_seconds = 60; // default;
 
                     // Channel may have custom delay
-                    int delay = CookieChannel.GetChannel(message.Channel).CookieDelay;
                     if (delay > 0)
                         delay_in_seconds = delay;
 
@@ -341,7 +344,8 @@ namespace CitiBot.Plugins.CookieGiver
             GiveCookies(client, channel, sender_user_database, target_user_database, forcedCookies, split[0]);
         }
 
-        private void GiveCookies(TwitchClient client, string channel, CookieUser sender, CookieUser target, int forcedCookies = -1, string forcedFlavour = "")
+        private void GiveCookies(TwitchClient client, string channel, CookieUser sender, CookieUser target, 
+            int forcedCookies = -1, string forcedFlavour = "")
         {
             // Set the last sent
             if (sender.Id != target.Id)
@@ -357,7 +361,7 @@ namespace CitiBot.Plugins.CookieGiver
 
             // Select a cookie
             IEnumerable<Int32> m_list_of_cookies_ids;
-            if (m_random.Next(0, 100) > 75)
+            if (RNG.Next(0, 100) > 75)
             {
                 m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
             }
@@ -369,23 +373,23 @@ namespace CitiBot.Plugins.CookieGiver
             }
 
 
-            int next = m_random.Next(0, m_list_of_cookies_ids.Count());
+            int next = RNG.Next(0, m_list_of_cookies_ids.Count()-1);
 
             // Select a quantity
             int quantity = 0;
 
-            int picker = m_random.Next(1, 100);
+            int picker = RNG.Next(1, 1000);
 
-            if (picker < 50)
-                quantity = m_random.Next(1, 10);
-            else if (picker < 70)
-                quantity = m_random.Next(10, 20);
-            else if (picker < 85)
-                quantity = m_random.Next(20, 40);
-            else if (picker < 95)
-                quantity = m_random.Next(40, 90);
+            if (picker < 500)
+                quantity = RNG.Next(1, 10);
+            else if (picker < 700)
+                quantity = RNG.Next(10, 20);
+            else if (picker < 850)
+                quantity = RNG.Next(20, 40);
+            else if (picker < 975)
+                quantity = RNG.Next(40, 90);
             else
-                quantity = m_random.Next(90, 101);
+                quantity = RNG.Next(90, 100);
 
             if (forcedCookies != -1)
                 quantity = forcedCookies;
@@ -424,8 +428,15 @@ namespace CitiBot.Plugins.CookieGiver
             else if (forcedFlavour.Contains("eveningcookie"))
                 flavor = "evening cookie";
 
-
-            string msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target.TwitchUser.BusinessDisplayName, modifier);
+            string msg;
+            if (flavor.Contains("[number]") && flavor.Contains("[target]"))
+            {
+                msg = flavor.Replace("[number]", NumberToWords(quantity)).Replace("[target]", target.TwitchUser.BusinessDisplayName) + modifier;
+            }
+            else
+            {
+                msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target.TwitchUser.BusinessDisplayName, modifier);
+            }
             if (quantity > 1)
                 msg = msg.Replace("cookie", "cookies");
             client.SendAction(channel, msg);
@@ -504,7 +515,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
 
             int quantity = 0;
-            quantity = m_random.Next(1, 3 * bribe_amount);
+            quantity = RNG.Next(1, 3 * bribe_amount);
 
 
             if (target.Id == briber.Id)
@@ -544,6 +555,38 @@ namespace CitiBot.Plugins.CookieGiver
 
                 briber.Save();
                 target.Save();
+            }
+        }
+
+
+        private void EnableCookies(TwitchClient client, TwitchMessage message)
+        {
+            var channel = message.Channel;
+            if (message.UserType >= TwitchUserTypes.Mod && !message.IsWhisper)
+            {
+                var chan = CookieChannel.GetChannel(channel);
+                chan.Status = CookieChannel.CookieChannelStates.Enabled;
+                chan.Save();
+                client.SendMessage(message.Channel, "Cookies have been enabled");
+            }
+            else
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+            }
+        }
+        private void DisableCookies(TwitchClient client, TwitchMessage message)
+        {
+            var channel = message.Channel;
+            if (message.UserType >= TwitchUserTypes.Mod && !message.IsWhisper)
+            {
+                var chan = CookieChannel.GetChannel(channel);
+                chan.Status = CookieChannel.CookieChannelStates.Disabled;
+                chan.Save();
+                client.SendMessage(message.Channel, "Cookies have been disabled");
+            }
+            else
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
 
@@ -670,12 +713,12 @@ namespace CitiBot.Plugins.CookieGiver
             {
                 return;
             }
-            if (poll == null || poll.Status == CookiePoll.State.Deleted || poll.Status == CookiePoll.State.Finished)
+            if (poll == null || poll.Status == CookiePoll.CookiePollState.Deleted || poll.Status == CookiePoll.CookiePollState.Finished)
             {
                 client.SendMessage(message.Channel, "No poll is ready to start. To create a new poll, please use !newpoll");
                 return;
             }
-            if (poll.Status == CookiePoll.State.Running)
+            if (poll.Status == CookiePoll.CookiePollState.Running)
             {
                 client.SendMessage(message.Channel, "Poll '{0}' is alrady in progress", poll.Title);
                 return;
@@ -774,7 +817,7 @@ namespace CitiBot.Plugins.CookieGiver
         public string GetActivity(int numberOfCookies)
         {
             var m_activities = CaloriesPerActivity.GetListOfActivities();
-            int act = m_random.Next(0, m_activities.Count());
+            int act = RNG.Next(0, m_activities.Count());
 
             var activity = CaloriesPerActivity.GetById(act);
 
@@ -834,14 +877,14 @@ namespace CitiBot.Plugins.CookieGiver
 
                     var poll = CookiePoll.GetLastestPoll(Channel);
 
-                    if (poll.Status != CookiePoll.State.Running)
+                    if (poll.Status != CookiePoll.CookiePollState.Running)
                         return;
 
                     var timeleft = new TimeSpan(poll.CreationTime.AddSeconds(poll.Duration).Ticks - DateTime.Now.Ticks);
 
                     if (timeleft.TotalSeconds < 0)
                     {
-                        poll.Status = CookiePoll.State.Finished;
+                        poll.Status = CookiePoll.CookiePollState.Finished;
                         Client.SendMessage(Channel, "Poll is now finished");
                         var options_ordered = poll.PollOptions.OrderByDescending(o => o.Votes).ToList();
                         Client.SendMessage(Channel, "1st : {0} with {1} cookies", options_ordered[0].Text, options_ordered[0].Votes);

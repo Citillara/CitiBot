@@ -17,6 +17,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public virtual int Id { get; set; }
+        public virtual CookieFlavourState Status { get; set; }
         public virtual string Channel { get; set; }
         public virtual DateTime? AddedDate { get; set; }
         public virtual string AddedBy { get; set; }
@@ -31,12 +32,12 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public static IEnumerable<Int32> GetChannelCookies(string channel)
         {
-            return Registry.Instance.CookieFlavours.Where(c => c.Channel == channel).Select(c => c.Id);
+            return Registry.Instance.CookieFlavours.Where(c => c.Channel == channel && c.Status == CookieFlavourState.Active).Select(c => c.Id);
         }
 
         public static IEnumerable<Int32> GetCommonCookies()
         {
-            return Registry.Instance.CookieFlavours.Where(c => c.Channel == "all").Select(c => c.Id);
+            return Registry.Instance.CookieFlavours.Where(c => c.Channel == "all" && c.Status == CookieFlavourState.Active).Select(c => c.Id);
         }
 
         public static CookieFlavour GetCookie(int id)
@@ -54,6 +55,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
             {
                 Channel = channel,
                 Text = text,
+                Status = CookieFlavourState.Active,
                 AddedBy = addedBy,
                 AddedDate = DateTime.Now,
                 isNew = true
@@ -69,5 +71,10 @@ namespace CitiBot.Plugins.CookieGiver.Models
                 isNew = false;
         }
 
+        public enum CookieFlavourState
+        {
+            Active = 0,
+            Deleted = 1
+        }
     }
 }
