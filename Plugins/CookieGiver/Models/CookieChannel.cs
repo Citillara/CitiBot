@@ -19,7 +19,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual string Channel { get; set; }
         public virtual int CookieDelay { get; set; }
         public virtual int BribeDelay { get; set; }
-        public virtual int StealDelay { get; set; }
         public virtual int CookieCheers { get; set; }
         public virtual string SubGreetings { get; set; }
         public virtual CookieChannelStates Status { get; set; }
@@ -38,7 +37,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
                     isNew = true,
                     BribeDelay = 600,
                     CookieDelay = 300,
-                    StealDelay = 600,
                     CookieCheers = 0,
                     Status = CookieChannelStates.Enabled
                 };

@@ -83,7 +83,7 @@ namespace CitiBot.Plugins.CookieGiver
                     ));
 
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, ChangeDelays,
+                new PluginManager.OnMessageAction(this, SetDelays,
                     "!bribedelay",
                     "!cookiedelay"
                     ) { UserChannelCooldown = 5 });
@@ -162,9 +162,37 @@ namespace CitiBot.Plugins.CookieGiver
         private void DisplayCookieCount(TwitchClient client, TwitchMessage message)
         {
             string channel = message.Channel;
+            CookieUser user;
+            if (message.Args.Count() > 1)
+            {
+                 user = CookieUser.GetUserByDisplayName(channel, message.Args[1]);
+                 if (user != null)
+                 {
+                     if (user.CookieReceived == 0)
+                     {
+                         client.SendMessage(message.Channel, "{0} didn't received any cookies so far. Type !cookies {0} to give some", user.TwitchUser.BusinessDisplayName);
+                         return;
+                     }
+                     else
+                     {
+                         var ranking = CookieUser.GetUserRankingInChannel(channel, user.TwitchUser.Name);
+                         client.SendMessage(message.Channel, "{0} has {1} cookies and is ranked {2}",
+                             user.TwitchUser.BusinessDisplayName,
+                             user.CookieReceived,
+                             Ranking(ranking));
+                         return;
+                     }
+                 }
+                 else
+                 {
+                     client.SendMessage(message.Channel, "{0} didn't received any cookies so far. Type !cookies {0} to give some", message.Args[1]);
+                     return;
+                 }
+            }
+
             string username = message.SenderName;
 
-            var user = CookieUser.GetUser(channel, username);
+            user = CookieUser.GetUser(channel, username);
             if (user != null && user.CookieReceived > 0)
             {
                 var ranking = CookieUser.GetUserRankingInChannel(channel, username);
@@ -590,7 +618,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
         }
 
-        private void ChangeDelays(TwitchClient client, TwitchMessage message)
+        private void SetDelays(TwitchClient client, TwitchMessage message)
         {
             var channel = message.Channel;
             if (message.UserType >= TwitchUserTypes.Broadcaster)
@@ -608,10 +636,6 @@ namespace CitiBot.Plugins.CookieGiver
                                 channelp.CookieDelay = time;
                                 client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
                                 break;
-                            case "!stealdelay":
-                                channelp.StealDelay = time;
-                                client.SendMessage(message.Channel, "Steal delay has been set to {0} seconds", time);
-                                break;
                             case "!bribedelay":
                                 channelp.BribeDelay = time;
                                 client.SendMessage(message.Channel, "Bribe delay has been set to {0} seconds", time);
@@ -619,6 +643,21 @@ namespace CitiBot.Plugins.CookieGiver
                             default: break;
                         }
                         channelp.Save();
+                    }
+                }
+                else
+                {
+                    var channelp = CookieChannel.GetChannel(channel); switch (message.Command)
+                    {
+                        case "!cookiedelay":
+                            time = channelp.CookieDelay;
+                            client.SendMessage(message.Channel, "Cookie delay is currently set to {0} seconds", time);
+                            break;
+                        case "!bribedelay":
+                            time = channelp.BribeDelay;
+                            client.SendMessage(message.Channel, "Bribe delay is currently set to {0} seconds", time);
+                            break;
+                        default: break;
                     }
                 }
             }

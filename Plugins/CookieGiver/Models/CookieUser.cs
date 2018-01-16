@@ -49,6 +49,26 @@ namespace CitiBot.Plugins.CookieGiver.Models
             };
         }
 
+
+        public static CookieUser GetUserByDisplayName(string channel, string name)
+        {
+            CookieUser val = null;
+            if (val == null && name != null)
+            {
+                val = Registry.Instance.CookieUsers.Include("TwitchUser")
+                    .Where(c => c.Channel == channel && c.TwitchUser.DisplayName == name)
+                    .FirstOrDefault();
+            }
+            if (val == null && name != null)
+            {
+                string lower = name.ToLowerInvariant();
+                val = Registry.Instance.CookieUsers.Include("TwitchUser")
+                    .Where(c => c.Channel == channel && c.TwitchUser.Name == lower)
+                    .FirstOrDefault();
+            }
+            return val;
+        }
+
         public static CookieUser GetUser(string channel, string username, long? twitchId = null, string displayName = null)
         {
             CookieUser val = null;

@@ -80,16 +80,17 @@ namespace CitiBot.Main
         {
 
         }
-
         
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
             Console.WriteLine("[" + DateTime.Now.ToString() + "] Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
-            if (!wasManualDisconnect && m_ReconnectAttempts < 3)
+            if (wasManualDisconnect)
+                return;
+            if (m_ReconnectAttempts < MAX_RECONNECT_ATTEMPS)
             {
                 m_TwitchClient.Disconnect();
-                Start();
                 m_ReconnectAttempts++;
+                Start();
             }
             else
             {
@@ -104,7 +105,7 @@ namespace CitiBot.Main
             var settings = BotSettings.GetAllBots();
             foreach (var bs in settings)
             {
-                Console.WriteLine(DateTime.Now.ToString() +  " + Preparing " + bs.Name);
+                Console.WriteLine("[" + DateTime.Now.ToString() + "] + Preparing " + bs.Name);
                 var bot = new Bot(bs);
                 list.Add(bot);
                 bot.Start();
