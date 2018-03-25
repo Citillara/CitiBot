@@ -5,7 +5,7 @@
 
 This repository contains the business and technical code that runs the CitiBot. It depends on my 2 others libraries (TwitchClient and IrcClient) both available on Github. No other dependencies are needed.
 
-I know wit lacks of documentation but if you need help feel free to open an issue or ask your questions on the dedicated discord : https://discord.gg/TycyDBm
+I know it lacks of documentation but if you need help feel free to open an issue or ask your questions on the dedicated discord : https://discord.gg/TycyDBm
 
 
 Bot commands at : https://github.com/Citillara/CitiBot/wiki
