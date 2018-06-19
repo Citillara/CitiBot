@@ -376,14 +376,9 @@ namespace CitiBot.Plugins.CookieGiver
             int forcedCookies = -1, string forcedFlavour = "")
         {
             // Set the last sent
-            if (sender.Id != target.Id)
+            if (sender.Id == target.Id)
             {
-                sender.LastSend = DateTime.Now;
-                sender.Save();
-            }
-            else
-            {
-                target.LastSend = DateTime.Now;
+                target = sender;
             }
 
 
@@ -426,7 +421,15 @@ namespace CitiBot.Plugins.CookieGiver
             // User is in the database
             target.LastReceived = DateTime.Now;
             target.CookieReceived += quantity;
-            target.Save();
+            sender.LastSend = DateTime.Now;
+            if (sender.Id != target.Id)
+            {
+                sender.CookiesSent += quantity;
+                target.CookiesReceivedByOthers += quantity;
+            }
+            sender.CookiesGenerated += quantity;
+
+            sender.Save();
 
             string modifier = "";
             if (quantity > 95)
@@ -488,9 +491,17 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
 
+            if (sender.Id == target.Id)
+            {
+                client.SendWhisper(message.SenderName, "Sorry {0}, but you can't send cookies to yourself, use !cookie instead", message.SenderDisplayName);
+                return;
+            }
+
             target.CookieReceived += amount;
+            target.CookiesReceivedByOthers += amount;
             target.Save();
             sender.CookieReceived -= amount;
+            sender.CookiesSent += amount;
             sender.Save();
 
             client.SendMessage(message.Channel, "{0} gave {1} cookies to {2}", message.SenderDisplayName, amount, message.Args[1]);
@@ -548,11 +559,14 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (target.Id == briber.Id)
             {
+                if (quantity > briber.CookieReceived)
+                    quantity = briber.CookieReceived;
+
                 briber.CookieReceived -= bribe_amount;
                 briber.CookieReceived -= quantity;
-
-                if (briber.CookieReceived < 0)
-                    briber.CookieReceived = 0;
+                briber.CookiesGivenToYoshi += bribe_amount;
+                briber.CookiesDestroyedByYoshi += quantity;
+                briber.CookiesLostToYoshi += quantity;
 
 
                 client.SendMessage(message.Channel, "{0} bribed Yoshi, who devoured {1} cookies of {2} ! ({3} cookies left)",
@@ -567,8 +581,14 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
+                if (quantity > target.CookieReceived)
+                    quantity = target.CookieReceived;
+
                 target.CookieReceived -= quantity;
+                target.CookiesLostToYoshi += quantity;
                 briber.CookieReceived -= bribe_amount;
+                briber.CookiesGivenToYoshi += bribe_amount;
+                briber.CookiesDestroyedByYoshi += quantity;
 
                 if (target.CookieReceived < 0)
                     target.CookieReceived = 0;

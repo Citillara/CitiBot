@@ -33,8 +33,6 @@ namespace CitiBot.Database
         {
             modelBuilder.Conventions.Remove<PluralizingTableNameConvention>();
 
-            Console.WriteLine("OnModelCreating");
-
             modelBuilder.Entity<BotChannel>()
                 .HasRequired(p => p.BotSettings)
                 .WithMany(s => s.Channels)

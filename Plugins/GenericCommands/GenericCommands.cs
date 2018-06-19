@@ -47,6 +47,11 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoVersion, "!version") { ChannelCooldown = 5 });
 
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoToAlBhed, "!toal", "!toalbhed", "!toalbed", "!toalbehd") { UserCooldown = 30 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoToFromBhed, "!fromal", "!fromalbhed", "!fromalbed", "!fromalbehd") { UserCooldown = 30 });
+
         }
 
 
@@ -185,6 +190,38 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoVersion(TwitchClient sender, TwitchMessage message)
         {
             sender.SendMessage(message.Channel, "IRC {0}, Twitch {1}, CitiBot {2}", Irc.IrcClient.Version, TwitchClient.Version, Program.Version);
+        }
+
+        public const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        public const string ALBHED = "YPLTAVKREZGMSHUBXNCDIJFQOWypltavkrezgmshubxncdijfqow";
+
+        private void DoToAlBhed(TwitchClient sender, TwitchMessage message)
+        {
+            if (!message.IsWhisper)
+                return;
+            sender.SendWhisper(message.Channel, Substitute(message.Message, ALPHABET, ALBHED));
+        }
+
+
+        private void DoToFromBhed(TwitchClient sender, TwitchMessage message)
+        {
+            if (!message.IsWhisper)
+                return;
+            sender.SendWhisper(message.Channel, Substitute(message.Message, ALBHED, ALPHABET));
+        }
+
+        private string Substitute(string text, string referenceFrom, string referenceTo)
+        {
+            StringBuilder sb = new StringBuilder(text.Length);
+            foreach (char c in text)
+            {
+                int i = referenceFrom.IndexOf(c);
+                if (i != -1)
+                    sb.Append(referenceTo[i]);
+                else
+                    sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         private bool TryParseTimeSpan(string str, out TimeSpan ts)

@@ -30,6 +30,12 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual DateTime LastYoshiBribe { get; set; }
         public virtual DateTime LastSend { get; set; }
         public virtual DateTime LastSteal { get; set; }
+        public virtual int CookiesSent { get; set; }
+        public virtual int CookiesLostToYoshi { get; set; }
+        public virtual int CookiesReceivedByOthers { get; set; }
+        public virtual int CookiesGenerated { get; set; }
+        public virtual int CookiesGivenToYoshi { get; set; }
+        public virtual int CookiesDestroyedByYoshi { get; set; }
 
 
         private bool isNew = false;

@@ -38,14 +38,16 @@ namespace CitiBot.Main
 
         public void Start()
         {
-            m_HttpListenerThread = new Thread(new ThreadStart(HttpListenerThread));
-            m_HttpListenerThread.Start();
+            if (m_HttpListenerThread == null)
+            {
+                m_HttpListenerThread = new Thread(new ThreadStart(HttpListenerThread));
+                m_HttpListenerThread.Start();
+            }
 
             m_TwitchClient = new TwitchClient(m_Name, m_Password);
             m_TwitchClient.OnDisconnect += m_TwitchClient_OnDisconnect;
             m_TwitchClient.OnJoin += m_TwitchClient_OnJoin;
             m_TwitchClient.OnMessage += m_TwitchClient_OnMessage;
-            m_TwitchClient.OnPart += m_TwitchClient_OnPart;
             m_TwitchClient.OnPerform += m_TwitchClient_OnPerform;
             m_TwitchClient.OnNotice += m_TwitchClient_OnNotice;
             if (Environment.MachineName == "KERNEL01")
@@ -156,11 +158,6 @@ namespace CitiBot.Main
                 }
             }
         }
-
-        void m_TwitchClient_OnPart(TwitchClient sender, Twitch.Models.TwitchClientOnPartEventArgs args)
-        {
-
-        }
         
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
@@ -178,20 +175,6 @@ namespace CitiBot.Main
                 Console.WriteLine("Maximum attempts reached, closing program");
                 Environment.Exit(1);
             }
-        }
-
-        public static IEnumerable<Bot> StartAllBots()
-        {
-            var list = new List<Bot>();
-            var settings = BotSettings.GetAllBots();
-            foreach (var bs in settings)
-            {
-                Console.WriteLine("[" + DateTime.Now.ToString() + "] + Preparing " + bs.Name);
-                var bot = new Bot(bs);
-                list.Add(bot);
-                bot.Start();
-            }
-            return list;
         }
     }
 }

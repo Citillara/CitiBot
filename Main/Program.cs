@@ -22,7 +22,7 @@ namespace CitiBot.Main
 
         void MainLoop()
         {
-            Bot.StartAllBots();
+            BotManager.StartAllBots();
         }
 
 
