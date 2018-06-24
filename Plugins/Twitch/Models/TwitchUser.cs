@@ -23,6 +23,8 @@ namespace CitiBot.Plugins.Twitch.Models
         public virtual long? TwitchId { get; set; }
         public virtual string Name { get; set; }
         public virtual string DisplayName { get; set; }
+        public virtual long? FFZId { get; set; }
+        public virtual long? TwitchIconId { get; set; }
 
         public virtual ICollection<CookieUser> CookieUsers { get; set; }
 

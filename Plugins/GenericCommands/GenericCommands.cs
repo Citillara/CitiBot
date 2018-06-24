@@ -1,4 +1,5 @@
 ﻿using CitiBot.Main;
+using CitiBot.Plugins.Twitch.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,6 +53,10 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoToFromBhed, "!fromal", "!fromalbhed", "!fromalbed", "!fromalbehd") { UserCooldown = 30 });
 
+
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoLearnUser, "!learn"));
+
         }
 
 
@@ -71,7 +76,7 @@ namespace CitiBot.Plugins.GenericCommands
                 {
                     if (message.Args[1].StartsWith("#"))
                     {
-                        
+
                         sender.Join(message.Args[1]);
                         sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", message.Args[1], message.SenderDisplayName);
                     }
@@ -147,7 +152,8 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoRoll(TwitchClient sender, TwitchMessage message)
         {
             int roll = 0;
-            switch (message.Command) {
+            switch (message.Command)
+            {
                 case "!d2": roll = 2; break;
                 case "!d3": roll = 3; break;
                 case "!d4": roll = 4; break;
@@ -190,6 +196,55 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoVersion(TwitchClient sender, TwitchMessage message)
         {
             sender.SendMessage(message.Channel, "IRC {0}, Twitch {1}, CitiBot {2}", Irc.IrcClient.Version, TwitchClient.Version, Program.Version);
+        }
+
+        public void DoLearnUser(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.UserType < TwitchUserTypes.Citillara)
+            {
+                return;
+            }
+            // usage !learn <username> <DisplayName> <FFZ/Twitch> <ID>
+            if (message.Args.Count() < 3)
+            {
+                return;
+            }
+            var user = TwitchUser.GetOrCreateUser(null, message.Args[1], message.Args[2]);
+
+            user.DisplayName = message.Args[2];
+            if (message.Args.Count() >= 5)
+            {
+                long val = -1;
+                bool success = long.TryParse(message.Args[4], out val);
+
+                switch (message.Args[3].ToLowerInvariant())
+                {
+                    case "ffz":
+                        if (success)
+                        {
+                            user.FFZId = val;
+                            user.TwitchIconId = null;
+                        }
+                        break;
+                    case "twitch":
+                        if (success)
+                        {
+                            user.TwitchIconId = val;
+                            user.FFZId = null;
+                        }
+                        break;
+                    case "none":
+                        user.FFZId = null;
+                        user.TwitchIconId = null;
+                        break;
+                    default: break;
+                }
+            }
+
+            
+            user.Save();
+
+            sender.SendMessage(message.Channel, "{0} learned successfully", user.DisplayName);
         }
 
         public const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -253,7 +308,7 @@ namespace CitiBot.Plugins.GenericCommands
 
 
             return true;
-            
+
         }
 
         private static void RepeatAction(int repeatCount, Action action, int delay = 200)
