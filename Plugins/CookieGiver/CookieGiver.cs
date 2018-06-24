@@ -429,6 +429,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             sender.CookiesGenerated += quantity;
 
+            target.Save();
             sender.Save();
 
             string modifier = "";
