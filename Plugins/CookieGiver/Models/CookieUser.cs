@@ -175,8 +175,8 @@ namespace CitiBot.Plugins.CookieGiver.Models
 
         public class LightCookieUser
         {
-            public int CookieReceived;
-            public string DisplayName;
+            public int CookieReceived { get; set; }
+            public string DisplayName { get; set; }
         }
 
     }

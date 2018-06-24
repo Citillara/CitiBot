@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CitiBot.Main
 {
-    class BotManager
+    public static class BotManager
     {
         static List<Bot> list;
 

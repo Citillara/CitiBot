@@ -18,7 +18,6 @@ namespace CitiBot.Plugins.CookieGiver
     {
 
         private const int CAL_PER_COOKIE = 31;
-        private DateTime m_previousSend = DateTime.MinValue;
 
         private List<Thread> m_threads = new List<Thread>();
 
@@ -88,7 +87,7 @@ namespace CitiBot.Plugins.CookieGiver
                     "!cookiedelay"
                     ) { UserChannelCooldown = 5 });
 
-            
+
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, ChangeStringSettings,
                     "!setsubgreetings"
@@ -165,29 +164,29 @@ namespace CitiBot.Plugins.CookieGiver
             CookieUser user;
             if (message.Args.Count() > 1)
             {
-                 user = CookieUser.GetUserByDisplayName(channel, message.Args[1]);
-                 if (user != null)
-                 {
-                     if (user.CookieReceived == 0)
-                     {
-                         client.SendMessage(message.Channel, "{0} didn't received any cookies so far. Type !cookies {0} to give some", user.TwitchUser.BusinessDisplayName);
-                         return;
-                     }
-                     else
-                     {
-                         var ranking = CookieUser.GetUserRankingInChannel(channel, user.TwitchUser.Name);
-                         client.SendMessage(message.Channel, "{0} has {1} cookies and is ranked {2}",
-                             user.TwitchUser.BusinessDisplayName,
-                             user.CookieReceived,
-                             Ranking(ranking));
-                         return;
-                     }
-                 }
-                 else
-                 {
-                     client.SendMessage(message.Channel, "{0} didn't received any cookies so far. Type !cookies {0} to give some", message.Args[1]);
-                     return;
-                 }
+                user = CookieUser.GetUserByDisplayName(channel, message.Args[1]);
+                if (user != null)
+                {
+                    if (user.CookieReceived == 0)
+                    {
+                        client.SendMessage(message.Channel, "{0} didn't received any cookies so far. Type !cookies {0} to give some", user.TwitchUser.BusinessDisplayName);
+                        return;
+                    }
+                    else
+                    {
+                        var ranking = CookieUser.GetUserRankingInChannel(channel, user.TwitchUser.Name);
+                        client.SendMessage(message.Channel, "{0} has {1} cookies and is ranked {2}",
+                            user.TwitchUser.BusinessDisplayName,
+                            user.CookieReceived,
+                            Ranking(ranking));
+                        return;
+                    }
+                }
+                else
+                {
+                    client.SendMessage(message.Channel, "{0} didn't received any cookies so far. Type !cookies {0} to give some", message.Args[1]);
+                    return;
+                }
             }
 
             string username = message.SenderName;
@@ -266,19 +265,6 @@ namespace CitiBot.Plugins.CookieGiver
             client.SendMessage(message.Channel, sb.ToString());
 
         }
-        /*private void OnBitsSent(TwitchClient client, TwitchMessage message)
-        {
-
-            int cookieCheers = CookieChannel.GetChannel(message.Channel).CookieCheers;
-            string senderDatabaseKey = message.SenderName;
-            string channel = message.Channel;
-            var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey, message.UserId, message.SenderDisplayName);
-            if (cookieCheers > 0)
-            {
-                int amount = cookieCheers * (int)message.BitsSent;
-                GiveCookies(client, channel, sender_user_database, sender_user_database, amount);
-            }
-        }*/
         private void OnSub(TwitchClient client, TwitchNotice notice)
         {
             var channel = CookieChannel.GetChannel(notice.Channel);
@@ -360,7 +346,9 @@ namespace CitiBot.Plugins.CookieGiver
                     if (next_allowance_date > DateTime.Now)
                     {
                         var next_allowance_seconds = (int)(next_allowance_date - DateTime.Now).TotalSeconds;
-                        client.SendWhisper(message.SenderName, "Sorry {0} but you can get/send cookies only every {1} seconds (next in {2} seconds)", message.SenderDisplayName, delay_in_seconds, next_allowance_seconds);
+                        client.SendWhisper(message.SenderName, 
+                            "Sorry {0} but you can get/send cookies only every {1} seconds (next in {2} seconds)", 
+                            message.SenderDisplayName, delay_in_seconds, next_allowance_seconds);
                         return; // Prevent him from sending
                     }
                 }
@@ -372,7 +360,7 @@ namespace CitiBot.Plugins.CookieGiver
             GiveCookies(client, channel, sender_user_database, target_user_database, forcedCookies, split[0]);
         }
 
-        private void GiveCookies(TwitchClient client, string channel, CookieUser sender, CookieUser target, 
+        private void GiveCookies(TwitchClient client, string channel, CookieUser sender, CookieUser target,
             int forcedCookies = -1, string forcedFlavour = "")
         {
             // Set the last sent
@@ -396,7 +384,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
 
 
-            int next = RNG.Next(0, m_list_of_cookies_ids.Count()-1);
+            int next = RNG.Next(0, m_list_of_cookies_ids.Count() - 1);
 
             // Select a quantity
             int quantity = 0;
@@ -668,7 +656,8 @@ namespace CitiBot.Plugins.CookieGiver
                 }
                 else
                 {
-                    var channelp = CookieChannel.GetChannel(channel); switch (message.Command)
+                    var channelp = CookieChannel.GetChannel(channel); 
+                    switch (message.Command)
                     {
                         case "!cookiedelay":
                             time = channelp.CookieDelay;
@@ -793,7 +782,7 @@ namespace CitiBot.Plugins.CookieGiver
         {
             decimal c = (decimal)cookies;
             decimal p = (decimal)percentage;
-            decimal t = cookies * (percentage / 100m);
+            decimal t = c * (p / 100m);
             return (int)Math.Ceiling(t);
         }
         public static string Ranking(int number)
@@ -969,7 +958,7 @@ namespace CitiBot.Plugins.CookieGiver
                             Client.SendMessage(Channel, "{0} minutes remaining", minutes_left);
                         }
 
-                        int waittime =(int) timeleft.TotalMilliseconds / 2;
+                        int waittime = (int)timeleft.TotalMilliseconds / 2;
                         wait.WaitOne(waittime);
                     }
 

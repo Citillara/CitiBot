@@ -87,7 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Database\BaseModel.cs" />
-    <Compile Include="Database\DatabaseMappings.cs" />
+    <Compile Include="Database\Registry.DatabaseMappings.cs" />
     <Compile Include="Main\Bot\Bot.cs" />
     <Compile Include="Main\Bot\BotManager.cs" />
     <Compile Include="Main\Bot\Models\BotChannel.cs" />
