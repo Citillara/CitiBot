@@ -50,19 +50,22 @@ namespace CitiBot.Plugins.CookieGiver
                     "!rank",
                     "!cookierank",
                     "!cookiecount"
-                    ) { UserCooldown = 30 });
+                    )
+                { UserCooldown = 30 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DisplayCookieCountLink,
                     "!ranks",
                     "!globalrank"
-                    ) { ChannelCooldown = 30 });
+                    )
+                { ChannelCooldown = 30 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DisplayCookieFlavours,
                     "!flavours",
                     "!flavors"
-                    ) { ChannelCooldown = 30 });
+                    )
+                { ChannelCooldown = 30 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, SendCookies,
@@ -85,19 +88,22 @@ namespace CitiBot.Plugins.CookieGiver
                 new PluginManager.OnMessageAction(this, SetDelays,
                     "!bribedelay",
                     "!cookiedelay"
-                    ) { UserChannelCooldown = 5 });
+                    )
+                { UserChannelCooldown = 5 });
 
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, ChangeStringSettings,
                     "!setsubgreetings"
-                    ) { UserChannelCooldown = 5 });
+                    )
+                { UserChannelCooldown = 5 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, AddCookieFlavor,
                     "!addcookie",
                     "!newcookie"
-                    ) { UserChannelCooldown = 5 });
+                    )
+                { UserChannelCooldown = 5 });
 
             pluginManager.RegisterCommand(
                  new PluginManager.OnMessageAction(this, DisplayDatabaseCookieCount,
@@ -107,7 +113,8 @@ namespace CitiBot.Plugins.CookieGiver
             pluginManager.RegisterCommand(
              new PluginManager.OnMessageAction(this, DisplayTop10,
                  "!top10"
-                 ) { ChannelCooldown = 30 });
+                 )
+             { ChannelCooldown = 30 });
         }
 
         public override void OnNotice(TwitchClient sender, TwitchNotice notice)
@@ -346,8 +353,8 @@ namespace CitiBot.Plugins.CookieGiver
                     if (next_allowance_date > DateTime.Now)
                     {
                         var next_allowance_seconds = (int)(next_allowance_date - DateTime.Now).TotalSeconds;
-                        client.SendWhisper(message.SenderName, 
-                            "Sorry {0} but you can get/send cookies only every {1} seconds (next in {2} seconds)", 
+                        client.SendWhisper(message.SenderName,
+                            "Sorry {0} but you can get/send cookies only every {1} seconds (next in {2} seconds)",
                             message.SenderDisplayName, delay_in_seconds, next_allowance_seconds);
                         return; // Prevent him from sending
                     }
@@ -371,17 +378,9 @@ namespace CitiBot.Plugins.CookieGiver
 
 
             // Select a cookie
-            IEnumerable<Int32> m_list_of_cookies_ids;
-            if (RNG.Next(0, 100) > 75)
-            {
-                m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
-            }
-            else
-            {
-                m_list_of_cookies_ids = CookieFlavour.GetChannelCookies(channel);
-                if (m_list_of_cookies_ids.Count() == 0)
-                    m_list_of_cookies_ids = CookieFlavour.GetCommonCookies();
-            }
+            List<Int32> m_list_of_cookies_ids = new List<int>();
+            m_list_of_cookies_ids.AddRange(CookieFlavour.GetCommonCookies());
+            m_list_of_cookies_ids.AddRange(CookieFlavour.GetChannelCookies(channel));
 
 
             int next = RNG.Next(0, m_list_of_cookies_ids.Count() - 1);
@@ -656,7 +655,7 @@ namespace CitiBot.Plugins.CookieGiver
                 }
                 else
                 {
-                    var channelp = CookieChannel.GetChannel(channel); 
+                    var channelp = CookieChannel.GetChannel(channel);
                     switch (message.Command)
                     {
                         case "!cookiedelay":

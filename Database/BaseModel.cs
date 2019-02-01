@@ -20,7 +20,7 @@ namespace CitiBot.Database
             Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Deleted;
             Database.Registry.Instance.Set<T>().Remove(t);
 
-            Database.Registry.Instance.SaveChanges();
+            //Database.Registry.Instance.SaveChanges();
         }
 
         protected void Save(bool isNew)
@@ -40,7 +40,7 @@ namespace CitiBot.Database
                 Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Modified;
             }
 
-            Database.Registry.Instance.SaveChanges();
+            //Database.Registry.Instance.SaveChanges();
         }
     }
 }
