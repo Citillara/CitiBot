@@ -149,15 +149,43 @@ namespace CitiBot.Main
 
                 if (Registry.Instance != null)
                     Registry.Instance.Close();
+                try
+                {
+                    this.Plugin.BeforeCommand(client, message);
 
-                this.Plugin.BeforeCommand(client, message);
+                    this.Action.Invoke(client, message);
 
-                this.Action.Invoke(client, message);
+                    this.Plugin.AfterCommand(client, message);
 
-                this.Plugin.AfterCommand(client, message);
+                    Registry.Instance.SaveChanges();
+                }
+                catch (System.IO.IOException)
+                {
+                    if (Registry.Instance != null)
+                        Registry.Instance.Close();
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    if (Registry.Instance != null)
+                        Registry.Instance.Close();
 
+
+                    Console.Write("[");
+                    Console.Write(DateTime.Now.ToString());
+                    Console.Write("] ");
+                    Console.WriteLine("OnMessageAction.OnMessage exception");
+                    Console.WriteLine(message);
+                    Console.WriteLine();
+                    Console.WriteLine(e.ToString());
+                    Console.WriteLine();
+
+                }
                 if (Registry.Instance != null)
+                {
+                    Registry.Instance.SaveChanges();
                     Registry.Instance.Close();
+                }
             }
 
             private bool CheckKey(string key, int cooldown)
