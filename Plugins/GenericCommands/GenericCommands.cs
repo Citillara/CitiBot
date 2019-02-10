@@ -2,6 +2,7 @@
 using CitiBot.Plugins.Twitch.Models;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -40,7 +41,8 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoRoll,
                     "!d2", "!d4", "!d6", "!d8", "!d10", "!d12", "!d20", "!d100", "!roll"
-                    ) { UserChannelCooldown = 30 });
+                    )
+                { UserChannelCooldown = 30 });
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff") { ChannelCooldown = 5 });
             pluginManager.RegisterCommand(
@@ -56,6 +58,12 @@ namespace CitiBot.Plugins.GenericCommands
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoLearnUser, "!learn"));
+
+
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoCelciusToFahrenheit, "!ctof", "!getf") { UserCooldown = 10 });
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoFahrenheitToCelcius, "!ftoc", "!getc") { UserCooldown = 10 });
 
         }
 
@@ -241,7 +249,7 @@ namespace CitiBot.Plugins.GenericCommands
                 }
             }
 
-            
+
             user.Save();
 
             sender.SendMessage(message.Channel, "{0} learned successfully", user.DisplayName);
@@ -318,6 +326,79 @@ namespace CitiBot.Plugins.GenericCommands
                 Thread.Sleep(delay);
                 action();
             }
+        }
+
+
+        private void DoCelciusToFahrenheit(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+                return;
+            if (message.Args.Count() > 1)
+            {
+                try
+                {
+                    checked
+                    {
+                        decimal c = ParseTemperatureIdenpendently(message.Args[1]);
+                        decimal f = ((c * 9m) / 5m) + 32m;
+                        sender.SendMessage(message.Channel, "{0:0.0} °F", f);
+                    }
+                }
+                catch { }
+            }
+        }
+        private void DoFahrenheitToCelcius(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+                return;
+            if (message.Args.Count() > 1)
+            {
+                try
+                {
+                    checked
+                    {
+                        decimal f = ParseTemperatureIdenpendently(message.Args[1]);
+                        decimal c = ((f - 32m) * 5m) / 9m;
+                        sender.SendMessage(message.Channel, "{0:0.0} °C", c);
+                    }
+                }
+                catch { }
+            }
+        }
+        static private decimal ParseTemperatureIdenpendently(string data)
+        {
+            string nospace = data.ToLowerInvariant().Replace(" ", "").Replace("f", "").Replace("c", "").Replace("°", "");
+            bool negative = false;
+            if (nospace.IndexOf('-') > -1)
+            {
+                negative = true;
+                nospace = nospace.Replace("-", "");
+            }
+            int comma = nospace.LastIndexOf(',');
+            int dot = nospace.LastIndexOf('.');
+
+            NumberStyles style = NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands;
+            CultureInfo provider = new CultureInfo("fr-FR");
+
+            string parsable = null;
+            if (comma > dot)
+            {
+                parsable = nospace.Replace(".", "");
+            }
+            else if (dot > comma)
+            {
+                parsable = nospace.Replace(",", "").Replace(".", ",");
+            }
+            else
+            {
+                parsable = nospace;
+            }
+            decimal v = decimal.Parse(parsable, style, provider);
+            if (negative)
+                v = -v;
+
+            return v;
+
         }
     }
 
