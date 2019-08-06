@@ -1,5 +1,6 @@
 ﻿using CitiBot.Main.Models;
 using CitiBot.Plugins.CookieGiver.Models;
+using CitiBot.Plugins.Counters.Models;
 using CitiBot.Plugins.Dog.Models;
 using CitiBot.Plugins.Twitch.Models;
 using System;
@@ -20,6 +21,7 @@ namespace CitiBot.Database
         public DbSet<CookieChannel> CookieChannels { get; set; }
         public DbSet<CookiePoll> CookiePolls { get; set; }
         public DbSet<CookiePollOption> CookiePollOptions { get; set; }
+        public DbSet<Counter> Counters { get; set; }
 
         public DbSet<DogUser> DogUsers { get; set; }
 

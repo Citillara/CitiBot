@@ -1,4 +1,6 @@
-﻿using CitiBot.Database;
+﻿#define BREAK
+
+using CitiBot.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,17 +18,28 @@ namespace CitiBot.Main
             { "GenericCommands", typeof(CitiBot.Plugins.GenericCommands.GenericCommands) },
             { "CookieGiver", typeof(CitiBot.Plugins.CookieGiver.CookieGiver) },
             { "Dog", typeof(CitiBot.Plugins.Dog.Dog) },
+            { "Counter", typeof(CitiBot.Plugins.Counters.CountersCommands) },
 
         };
 
         private Dictionary<string, OnMessageAction> m_commands;
 
         private List<Plugin> m_plugins;
+        
+        private StatsCounter m_NumberOfParsedMessages;
+        private StatsCounter m_NumberOfRunnedCommands;
+
+        public long NumberOfParsedMessagesRecently { get { return m_NumberOfParsedMessages.GetCount(); } }
+        public long NumberOfRunnedCommandsRecently { get { return m_NumberOfRunnedCommands.GetCount(); } }
+
+        public string[] AllCommands { get { return m_commands.Keys.ToArray(); } }
 
         public PluginManager()
         {
             m_commands = new Dictionary<string, OnMessageAction>();
             m_plugins = new List<Plugin>();
+            m_NumberOfParsedMessages = new StatsCounter(new TimeSpan(0, 30, 0));
+            m_NumberOfRunnedCommands = new StatsCounter(new TimeSpan(0, 30, 0));
         }
 
         public void LoadAllPlugins()
@@ -54,6 +67,10 @@ namespace CitiBot.Main
             }
             catch (Exception e)
             {
+#if BREAK
+                    if (System.Diagnostics.Debugger.IsAttached)
+                        System.Diagnostics.Debugger.Break();
+#endif
                 Console.Write("[");
                 Console.Write(DateTime.Now.ToString());
                 Console.Write("] ");
@@ -68,6 +85,7 @@ namespace CitiBot.Main
         {
             try
             {
+                m_NumberOfParsedMessages.IncrementCounter();
                 if (message.BitsSent != 0)
                 {
                     m_plugins.ForEach(p => p.OnBitsSent(client, message));
@@ -81,12 +99,17 @@ namespace CitiBot.Main
                     OnMessageAction action;
                     if (m_commands.TryGetValue(msg, out action))
                     {
+                        m_NumberOfRunnedCommands.IncrementCounter();
                         action.OnMessage(client, message);
                     }
                 }
             }
             catch(Exception e)
             {
+#if BREAK
+                    if (System.Diagnostics.Debugger.IsAttached)
+                        System.Diagnostics.Debugger.Break();
+#endif
                 Console.Write("[");
                 Console.Write(DateTime.Now.ToString());
                 Console.Write("] ");
@@ -169,8 +192,10 @@ namespace CitiBot.Main
                 {
                     if (Registry.Instance != null)
                         Registry.Instance.Close();
-
-
+#if BREAK
+                    if (System.Diagnostics.Debugger.IsAttached)
+                        System.Diagnostics.Debugger.Break();
+#endif
                     Console.Write("[");
                     Console.Write(DateTime.Now.ToString());
                     Console.Write("] ");

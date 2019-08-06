@@ -15,6 +15,7 @@ namespace CitiBot.Main
         private int m_BotId;
         private string m_Name;
         private string m_Password;
+        private short m_CallbackPort;
         private PluginManager m_PluginManager;
         private TwitchClient m_TwitchClient;
         private HttpListener m_HttpListener;
@@ -23,8 +24,9 @@ namespace CitiBot.Main
         private ManualResetEvent m_HttpListenerReset;
         private DateTime m_StartTime;
 
+
         private int m_ReconnectAttempts = 0;
-        private const int MAX_RECONNECT_ATTEMPS = 3;
+        private const int MAX_RECONNECT_ATTEMPS = 15;
 
         public Bot(BotSettings settings)
         {
@@ -32,6 +34,7 @@ namespace CitiBot.Main
             m_BotId = settings.Id;
             m_Name = settings.Name;
             m_Password = settings.Password;
+            m_CallbackPort = settings.CallbackPort;
             settings.Plugins.ToList().ForEach(p => m_PluginManager.AddPlugin(p.PluginName));
             m_PluginManager.LoadAllPlugins();
         }
@@ -61,9 +64,10 @@ namespace CitiBot.Main
 
         void HttpListenerThread()
         {
-            string httplistenerport = System.Configuration.ConfigurationManager.AppSettings["httplistenerport"];
+            if (m_CallbackPort == 0)
+                return;
             m_HttpListener = new HttpListener();
-            m_HttpListener.Prefixes.Add("http://localhost:" + httplistenerport + "/");
+            m_HttpListener.Prefixes.Add("http://localhost:" + m_CallbackPort + "/");
             m_HttpListener.Start();
             m_HttpListenerThreadLoop = true;
             m_HttpListenerReset = new ManualResetEvent(false);
@@ -90,18 +94,40 @@ namespace CitiBot.Main
 
             if (request.Url.AbsoluteUri.EndsWith("status"))
             {
+                long time = DateTime.Now.Ticks - bot.m_TwitchClient.NextKeepAlive.Ticks;
+                if (time <= TimeSpan.TicksPerHour * 2)
+                {
+                    sb.AppendLine("[STATUS=OK]");
+                }
+                else
+                {
+                    sb.AppendLine("[STATUS=ERROR]");
+                }
                 sb.Append("Start time : ");
                 sb.AppendLine(bot.m_StartTime.ToString());
                 sb.Append("Last keep alive : ");
                 sb.AppendLine(bot.m_TwitchClient.LastKeepAlive.ToString());
                 sb.Append("Next keep alive : ");
                 sb.AppendLine(bot.m_TwitchClient.NextKeepAlive.ToString());
+                sb.Append("Connected to : ");
+                sb.AppendLine(bot.m_TwitchClient.GetIPConnected());
+                sb.Append("Number of parsed messages in the last 30 minutes : ");
+                sb.AppendLine(bot.m_PluginManager.NumberOfParsedMessagesRecently.ToString());
+                sb.Append("Number of runned commands in the last 30 minutes : ");
+                sb.AppendLine(bot.m_PluginManager.NumberOfRunnedCommandsRecently.ToString());
             }
-            else if(request.Url.AbsoluteUri.EndsWith("triggerKeepAlive"))
+            else if (request.Url.AbsoluteUri.EndsWith("triggerKeepAlive"))
             {
                 sb.AppendLine("Triggering keep alive");
                 bot.m_TwitchClient.TriggerNextKeepAlive();
-            } 
+            }
+            else if (request.Url.AbsoluteUri.EndsWith("allCommands"))
+            {
+                foreach (string s in bot.m_PluginManager.AllCommands)
+                {
+                    sb.AppendLine(s);
+                }
+            }
             else
             {
                 noBody = true;
@@ -158,7 +184,7 @@ namespace CitiBot.Main
                 }
             }
         }
-        
+
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
             Console.WriteLine("[" + DateTime.Now.ToString() + "] Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
@@ -168,6 +194,10 @@ namespace CitiBot.Main
             {
                 m_TwitchClient.Disconnect();
                 m_ReconnectAttempts++;
+                int delay = Math.Min(3600 * 1000, (int)Math.Pow(3, m_ReconnectAttempts) * 1000);
+                Console.WriteLine("Next reconnect in " + delay + " ms");
+                Thread.Sleep(delay);
+
                 Start();
             }
             else
@@ -176,5 +206,6 @@ namespace CitiBot.Main
                 Environment.Exit(1);
             }
         }
+
     }
 }

@@ -12,6 +12,7 @@ namespace CitiBot.Database
     public abstract class BaseModel<T> where T : class
     {
         private bool hasBeenDeleted = false;
+        private bool doOnce = false;
 
         public virtual void Delete()
         {
@@ -27,6 +28,10 @@ namespace CitiBot.Database
         {
             if (hasBeenDeleted)
                 return;
+
+            if (doOnce)
+                return;
+            doOnce = true;
 
             T t = (T)(object)this;
             if (isNew)

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Twitch;
@@ -635,7 +636,7 @@ namespace CitiBot.Plugins.CookieGiver
                 int time = 0;
                 if (split.Length > 1 && int.TryParse(split[1], out time))
                 {
-                    if (time > 0)
+                    if (time > 2)
                     {
                         var channelp = CookieChannel.GetChannel(channel);
                         switch (message.Command)
@@ -879,20 +880,22 @@ namespace CitiBot.Plugins.CookieGiver
                 return string.Format("{2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
 
         }
-        private static bool CheckAllowedCookie(string cookie)
+
+        private readonly Regex NO_DOT_URL_LIKE = new Regex("[^$&+,:;=?@#|'<>.-^*()%!\\s]\\.[^$&+,:;=?@#|'<>.-^*()%!\\s]", RegexOptions.Compiled);
+
+        private bool CheckAllowedCookie(string cookie)
         {
             if (cookie.Contains("http"))
                 return false;
             if (cookie.Contains("www"))
                 return false;
-            if (cookie.Contains(".co"))
-                return false;
             if (cookie.Contains("\r"))
                 return false;
             if (cookie.Contains("\n"))
                 return false;
-            if (cookie.Contains("â"))
+            if (NO_DOT_URL_LIKE.IsMatch(cookie))
                 return false;
+
             return true;
         }
 

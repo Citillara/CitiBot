@@ -51,7 +51,11 @@ namespace CitiBot.Plugins.CookieGiver.Models
             {
                 isNew = true,
                 Channel = channel,
-                TwitchUser = twitchUser
+                TwitchUser = twitchUser,
+                LastReceived = new DateTime(2000, 1, 1, 1, 1, 1),
+                LastYoshiBribe = new DateTime(2000, 1, 1, 1, 1, 1),
+                LastSend = new DateTime(2000, 1, 1, 1, 1, 1),
+                LastSteal = new DateTime(2000, 1, 1, 1, 1, 1),
             };
         }
 

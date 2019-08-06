@@ -20,6 +20,7 @@ namespace CitiBot.Main.Models
         public virtual string Name { get; set; }
         public virtual string Password { get; set; }
         public virtual short Enabled { get; set; }
+        public virtual short CallbackPort { get; set; }
         public virtual ICollection<BotPlugin> Plugins { get; set; }
         public virtual ICollection<BotChannel> Channels { get; set; }
 

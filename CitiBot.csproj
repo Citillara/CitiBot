@@ -93,6 +93,7 @@
     <Compile Include="Main\Bot\Models\BotChannel.cs" />
     <Compile Include="Main\Bot\Models\BotPlugin.cs" />
     <Compile Include="Main\Bot\Models\BotSettings.cs" />
+    <Compile Include="Main\Bot\StatsCounter.cs" />
     <Compile Include="Main\Plugin\PluginManager.cs" />
     <Compile Include="Database\Registry.cs" />
     <Compile Include="Main\Extensions.cs" />
@@ -105,6 +106,8 @@
     <Compile Include="Plugins\CookieGiver\Models\CookiePoll.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookiePollOption.cs" />
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
+    <Compile Include="Plugins\Counters\CountersCommands.cs" />
+    <Compile Include="Plugins\Counters\Models\Counter.cs" />
     <Compile Include="Plugins\Dog\Dog.cs" />
     <Compile Include="Plugins\Dog\Models\DogUser.cs" />
     <Compile Include="Plugins\GenericCommands\GenericCommands.cs" />

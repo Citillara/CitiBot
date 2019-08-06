@@ -130,10 +130,9 @@ namespace CitiBot.Plugins.Twitch.Models
                 c.Delete();
             base.Delete();
         }
-
         public virtual void Save()
         {
-            this.Save(isNew);
+            base.Save(isNew);
             if (isNew)
                 isNew = false;
         }
