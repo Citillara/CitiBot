@@ -174,11 +174,14 @@ namespace CitiBot.Main
                     Registry.Instance.Close();
                 try
                 {
-                    this.Plugin.BeforeCommand(client, message);
+                    bool runNext = this.Plugin.BeforeCommand(client, message);
 
-                    this.Action.Invoke(client, message);
+                    if (runNext)
+                    {
+                        this.Action.Invoke(client, message);
 
-                    this.Plugin.AfterCommand(client, message);
+                        this.Plugin.AfterCommand(client, message);
+                    }
 
                     Registry.Instance.SaveChanges();
                 }

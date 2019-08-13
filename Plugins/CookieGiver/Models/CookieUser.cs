@@ -162,10 +162,24 @@ namespace CitiBot.Plugins.CookieGiver.Models
             return Registry.Instance.CookieUsers.Where(c => c.Channel == channel && !excludeList.Contains(c.Id)).Select(c => c.Id);
         }
 
+        private static readonly DateTime MIN_DT = new DateTime(2000, 01, 01);
+
         public virtual void Save()
         {
             if (this.CookieReceived > this.TopCookieCount)
                 this.TopCookieCount = this.CookieReceived;
+
+            if (this.LastReceived < MIN_DT)
+                this.LastReceived = MIN_DT;
+            
+            if (this.LastYoshiBribe < MIN_DT)
+                this.LastYoshiBribe = MIN_DT;
+
+            if (this.LastSend < MIN_DT)
+                this.LastSend = MIN_DT;
+
+            if (this.LastSteal < MIN_DT)
+                this.LastSteal = MIN_DT;
 
             this.Save(isNew);
             if (isNew)

@@ -64,6 +64,21 @@ namespace CitiBot.Plugins.CookieGiver.Models
             c.Save();
         }
 
+        public static void AddModifyNewCookieFlavor(string channel, string text, string addedBy)
+        {
+            var cookie = Registry.Instance.CookieFlavours.Where(c => c.Channel == channel 
+            && c.Status == CookieFlavourState.Active).First();
+            if (cookie != null)
+            {
+                cookie.Text = text;
+                cookie.Save();
+            }
+            else
+            {
+                AddNewCookieFlavor(channel, text, addedBy);
+            }
+        }
+
         private void Save()
         {
             this.Save(isNew);
