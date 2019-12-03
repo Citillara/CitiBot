@@ -16,12 +16,11 @@ namespace CitiBot.Database
 
         public virtual void Delete()
         {
+            if (hasBeenDeleted)
+                return;
             hasBeenDeleted = true;
             T t = (T)(object)this;
-            Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Deleted;
-            Database.Registry.Instance.Set<T>().Remove(t);
-
-            //Database.Registry.Instance.SaveChanges();
+            DoDelete(t);
         }
 
         protected void Save(bool isNew)
@@ -36,16 +35,40 @@ namespace CitiBot.Database
             T t = (T)(object)this;
             if (isNew)
             {
-                Database.Registry.Instance.Set<T>().Add(t);
-                Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Added;
+                DoAdd(t);
             }
             else
             {
-                Database.Registry.Instance.Set<T>().Attach(t);
-                Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Modified;
+                DoModify(t);
             }
+        }
 
-            //Database.Registry.Instance.SaveChanges();
+        private static void DoAdd(T t)
+        {
+            Database.Registry.Instance.Set<T>().Add(t);
+            Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Added;
+        }
+        private static void DoModify(T t)
+        {
+            Database.Registry.Instance.Set<T>().Attach(t);
+            Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Modified;
+        }
+        private static void DoDelete(T t)
+        {
+            Database.Registry.Instance.Entry<T>(t).State = System.Data.Entity.EntityState.Deleted;
+            Database.Registry.Instance.Set<T>().Remove(t);
+        }
+
+        protected static T FirstOrDefaultLocal(Func<T, bool> condition)
+        {
+            return Database.Registry.Instance.Set<T>().Local.Where(condition).FirstOrDefault() 
+                ?? Database.Registry.Instance.Set<T>().Where(condition).FirstOrDefault();
+        }
+
+        protected static T FirstOrDefaultLocal(string include, Func<T, bool> condition)
+        {
+            return Database.Registry.Instance.Set<T>().Local.Where(condition).FirstOrDefault()
+                ?? Database.Registry.Instance.Set<T>().Include(include).Where(condition).FirstOrDefault();
         }
     }
 }

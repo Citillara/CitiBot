@@ -82,8 +82,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
         private void Save()
         {
             this.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
 
         public enum CookieFlavourState

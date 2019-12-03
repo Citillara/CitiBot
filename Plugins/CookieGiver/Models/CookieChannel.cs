@@ -46,8 +46,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual void Save()
         {
             this.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
 
         public enum CookieChannelStates {

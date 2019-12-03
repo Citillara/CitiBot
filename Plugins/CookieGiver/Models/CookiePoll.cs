@@ -117,8 +117,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
         protected virtual void Save()
         {
             this.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
 
 

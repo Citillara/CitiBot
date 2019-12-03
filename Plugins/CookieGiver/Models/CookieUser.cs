@@ -65,16 +65,12 @@ namespace CitiBot.Plugins.CookieGiver.Models
             CookieUser val = null;
             if (val == null && name != null)
             {
-                val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.DisplayName == name)
-                    .FirstOrDefault();
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.DisplayName == name);
             }
             if (val == null && name != null)
             {
                 string lower = name.ToLowerInvariant();
-                val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.Name == lower)
-                    .FirstOrDefault();
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.Name == lower);
             }
             return val;
         }
@@ -84,28 +80,20 @@ namespace CitiBot.Plugins.CookieGiver.Models
             CookieUser val = null;
             if (twitchId != null)
             {
-                val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.TwitchId == twitchId)
-                    .FirstOrDefault();
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.TwitchId == twitchId);
             }
             if (val == null && username != null)
             {
-                val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.Name == username)
-                    .FirstOrDefault();
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.Name == username);
             }
             if (val == null && displayName != null)
             {
-                val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.DisplayName == displayName)
-                    .FirstOrDefault();
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.DisplayName == displayName);
             }
             if (val == null && displayName != null)
             {
                 string lower = displayName.ToLowerInvariant();
-                val = Registry.Instance.CookieUsers.Include("TwitchUser")
-                    .Where(c => c.Channel == channel && c.TwitchUser.Name == lower)
-                    .FirstOrDefault();
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.Name == lower);
             }
             if (val == null)
             {
@@ -115,7 +103,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         }
         public static CookieUser GetUser(int id)
         {
-            var val = Registry.Instance.CookieUsers.Where(c => c.Id == id).FirstOrDefault();
+            var val = Registry.Instance.CookieUsers.Find(id);
             return val;
         }
 
@@ -144,7 +132,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
         }
         public static IEnumerable<LightCookieUser> GetChannelTopUsers(string channel, int count)
         {
-
             var result = from db in Registry.Instance.CookieUsers
                          where db.Channel == channel
                          orderby db.CookieReceived descending
@@ -182,8 +169,6 @@ namespace CitiBot.Plugins.CookieGiver.Models
                 this.LastSteal = MIN_DT;
 
             this.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
 
         public override void Delete()

@@ -26,8 +26,16 @@ namespace CitiBot.Plugins.GenericCommands
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoBug, "!bug") { ChannelCooldown = 30 });
-            pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoJoin, "!join"));
+            if (Environment.MachineName == "KERNEL01")
+            {
+                pluginManager.RegisterCommand(
+                    new PluginManager.OnMessageAction(this, DoJoin, "!join", "!join2"));
+            }
+            else
+            {
+                pluginManager.RegisterCommand(
+                    new PluginManager.OnMessageAction(this, DoJoin, "!join"));
+            }
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoPart, "!part"));
             pluginManager.RegisterCommand(
@@ -44,7 +52,7 @@ namespace CitiBot.Plugins.GenericCommands
                     )
                 { UserChannelCooldown = 30 });
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff") { ChannelCooldown = 5 });
+                new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff", "!timedif") { ChannelCooldown = 5 });
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoUptime, "!uptime") { ChannelCooldown = 5 });
             pluginManager.RegisterCommand(

@@ -70,8 +70,6 @@ namespace CitiBot.Plugins.Counters.Models
         public virtual void Save()
         {
             this.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
 
     }

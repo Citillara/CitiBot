@@ -29,8 +29,6 @@ namespace CitiBot.Main.Models
         public virtual void Save()
         {
             this.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
 
         public ICollection<BotChannel> GetAutoJoinChannels()

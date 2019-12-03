@@ -54,21 +54,21 @@ namespace CitiBot.Plugins.Twitch.Models
             TwitchUser val = null;
             if (twitchId.HasValue)
             {
-                val = Registry.Instance.TwitchUsers.Where(t => t.TwitchId == twitchId).FirstOrDefault();
+                val = FirstOrDefaultLocal(t => t.TwitchId == twitchId);
             }
             if (val == null && username != null)
             {
-                val = Registry.Instance.TwitchUsers.Where(t => t.Name == username).FirstOrDefault();
+                val = FirstOrDefaultLocal(t => t.Name == username);
             }
 
             if (val == null && displayName != null)
             {
-                val = Registry.Instance.TwitchUsers.Where(t => t.DisplayName == displayName).FirstOrDefault();
+                val = FirstOrDefaultLocal(t => t.DisplayName == displayName);
             }
             if (val == null && displayName != null)
             {
                 string lower = displayName.ToLowerInvariant();
-                val = Registry.Instance.TwitchUsers.Where(t => t.Name == lower).FirstOrDefault();
+                val = FirstOrDefaultLocal(t => t.Name == lower);
             }
 
             if (val == null)
@@ -85,13 +85,14 @@ namespace CitiBot.Plugins.Twitch.Models
 
         public static TwitchUser GetUser(int id)
         {
-            return Registry.Instance.TwitchUsers.Where(c => c.Id == id).FirstOrDefault();
+            return Registry.Instance.TwitchUsers.Find(id);
         }
 
         public static TwitchUser GetUserByTwitchId(int id)
         {
-            return Registry.Instance.TwitchUsers.Where(c => c.TwitchId == id).FirstOrDefault();
+            return FirstOrDefaultLocal(c => c.TwitchId == id);
         }
+        
 
         private void CheckAndUpdate(string username, string displayName, long? twitchId = null)
         {
@@ -99,7 +100,7 @@ namespace CitiBot.Plugins.Twitch.Models
             // Check if another user exists with same username
             if (twitchId.HasValue && twitchId.Value != 0)
             {
-                var other = Registry.Instance.TwitchUsers.Where(c => c.Name == username && c.Id != Id).FirstOrDefault();
+                var other = FirstOrDefaultLocal(c => c.Name == username && c.Id != Id);
                 if (other != null && !other.TwitchId.HasValue && other.TwitchId != 0)
                 {
                     other.Delete();
@@ -133,8 +134,6 @@ namespace CitiBot.Plugins.Twitch.Models
         public virtual void Save()
         {
             base.Save(isNew);
-            if (isNew)
-                isNew = false;
         }
     }
 
