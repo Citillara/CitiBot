@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -16,6 +17,10 @@ namespace CitiBot.Main
         public static readonly string Version = "5";
         static void Main(string[] args)
         {
+            var culture = new System.Globalization.CultureInfo("fr-FR");
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+
             new Program().MainLoop();
         }
 

@@ -63,6 +63,7 @@ namespace CitiBot.Main
         {
             try
             {
+                // TODO : Rework that part to do like the normal message
                 m_plugins.ForEach(p => p.OnNotice(client, notice));
             }
             catch (Exception e)
@@ -205,7 +206,15 @@ namespace CitiBot.Main
                     Console.WriteLine("OnMessageAction.OnMessage exception");
                     Console.WriteLine(message);
                     Console.WriteLine();
-                    Console.WriteLine(e.ToString());
+                    if (e is System.Data.Entity.Infrastructure.DbUpdateException)
+                    {
+                        Console.WriteLine("System.Data.Entity.Infrastructure.DbUpdateException");
+                        Console.WriteLine(e.Message);
+                    }
+                    else
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
                     Console.WriteLine();
 
                 }
