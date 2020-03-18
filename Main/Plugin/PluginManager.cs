@@ -1,6 +1,7 @@
 ﻿#define BREAK
 
 using CitiBot.Database;
+using CitiBot.Main.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,8 @@ namespace CitiBot.Main
         private Dictionary<string, OnMessageAction> m_commands;
 
         private List<Plugin> m_plugins;
+
+        private int m_BotId;
         
         private StatsCounter m_NumberOfParsedMessages;
         private StatsCounter m_NumberOfRunnedCommands;
@@ -32,14 +35,17 @@ namespace CitiBot.Main
         public long NumberOfParsedMessagesRecently { get { return m_NumberOfParsedMessages.GetCount(); } }
         public long NumberOfRunnedCommandsRecently { get { return m_NumberOfRunnedCommands.GetCount(); } }
 
+        public int BotId { get { return m_BotId; } }
+
         public string[] AllCommands { get { return m_commands.Keys.ToArray(); } }
 
-        public PluginManager()
+        public PluginManager(Bot bot)
         {
             m_commands = new Dictionary<string, OnMessageAction>();
             m_plugins = new List<Plugin>();
             m_NumberOfParsedMessages = new StatsCounter(new TimeSpan(0, 30, 0));
             m_NumberOfRunnedCommands = new StatsCounter(new TimeSpan(0, 30, 0));
+            m_BotId = bot.Id;
         }
 
         public void LoadAllPlugins()

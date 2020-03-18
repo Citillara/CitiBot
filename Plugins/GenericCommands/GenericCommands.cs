@@ -1,4 +1,5 @@
 ﻿using CitiBot.Main;
+using CitiBot.Main.Models;
 using CitiBot.Plugins.Twitch.Models;
 using System;
 using System.Collections.Generic;
@@ -19,11 +20,11 @@ namespace CitiBot.Plugins.GenericCommands
         public readonly int RAID_REPEAT = 4;
         private Dictionary<string, string> m_raidMessages = new Dictionary<string, string>();
         private DateTime m_startTime = DateTime.Now;
-
+        private int m_botId;
 
         public override void OnLoad(PluginManager pluginManager)
         {
-
+            m_botId = pluginManager.BotId;
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoBug, "!bug") { ChannelCooldown = 30 });
             if (Environment.MachineName == "KERNEL01")
@@ -67,6 +68,8 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoLearnUser, "!learn"));
 
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoSetAutoJoin, "!setautojoin"));
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoCelciusToFahrenheit, "!ctof", "!getf") { UserCooldown = 10 });
@@ -82,7 +85,7 @@ namespace CitiBot.Plugins.GenericCommands
         }
         public void DoJoin(TwitchClient sender, TwitchMessage message)
         {
-            if (message.UserType < TwitchUserTypes.Developper)
+            if (message.UserType < TwitchUserTypes.Developer)
             {
                 //sender.SendWhisper(message.SenderName, "Sorry {0}, but that command is currently restricted to Bot Admins", message.SenderDisplayName);
             }
@@ -212,6 +215,36 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoVersion(TwitchClient sender, TwitchMessage message)
         {
             sender.SendMessage(message.Channel, "IRC {0}, Twitch {1}, CitiBot {2}", Irc.IrcClient.Version, TwitchClient.Version, Program.Version);
+        }
+        public void DoSetAutoJoin(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.UserType < TwitchUserTypes.Developer)
+            {
+                return;
+            }
+            if (message.Args.Count() == 2 && !message.IsWhisper)
+            {
+                switch (message.Args[1])
+                {
+                    case "on":
+                        {
+                            var channel = BotSettings.GetById(m_botId).GetChannel(message.Channel);
+                            channel.AutoJoin = BotChannel.AutoJoinSettings.Yes;
+                            channel.Save();
+                            sender.SendMessage(message.Channel, "Autojoin enabled");
+                        }
+                        return;
+                    case "off":
+                        {
+                            var channel = BotSettings.GetById(m_botId).GetChannel(message.Channel);
+                            channel.AutoJoin = BotChannel.AutoJoinSettings.No;
+                            channel.Save();
+                            sender.SendMessage(message.Channel, "Autojoin disabled");
+                        }
+                        return;
+                    default: break;
+                }
+            }
         }
 
         public void DoLearnUser(TwitchClient sender, TwitchMessage message)

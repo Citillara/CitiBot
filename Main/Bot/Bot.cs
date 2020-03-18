@@ -28,9 +28,11 @@ namespace CitiBot.Main
         private int m_ReconnectAttempts = 0;
         private const int MAX_RECONNECT_ATTEMPS = 15;
 
+        public int Id { get { return m_BotId; } }
+
         public Bot(BotSettings settings)
         {
-            m_PluginManager = new PluginManager();
+            m_PluginManager = new PluginManager(this);
             m_BotId = settings.Id;
             m_Name = settings.Name;
             m_Password = settings.Password;
@@ -71,15 +73,27 @@ namespace CitiBot.Main
             m_HttpListener.Start();
             m_HttpListenerThreadLoop = true;
             m_HttpListenerReset = new ManualResetEvent(false);
+            Console.WriteLine("[" + DateTime.Now.ToString() + "] Started HTTPListener on port " + m_CallbackPort.ToString());
+
             while (m_HttpListenerThreadLoop)
             {
-                m_HttpListenerReset.Reset();
-                IAsyncResult result = m_HttpListener.BeginGetContext(new AsyncCallback(ListenerCallback), this);
-                m_HttpListenerReset.WaitOne();
+                try
+                {
+                    m_HttpListenerReset.Reset();
+                    IAsyncResult result = m_HttpListener.BeginGetContext(new AsyncCallback(ListenerCallback), this);
+                    m_HttpListenerReset.WaitOne();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("[" + DateTime.Now.ToString() + "] Exception in HTTPListener on port " + m_CallbackPort.ToString());
+                    Console.WriteLine(e);
+                    break;
+                }
             }
+            Console.WriteLine("[" + DateTime.Now.ToString() + "] Closing HTTPListener on port " + m_CallbackPort.ToString());
         }
 
-        public static void ListenerCallback(IAsyncResult result)
+        public void ListenerCallback(IAsyncResult result)
         {
             Bot bot = (Bot)result.AsyncState;
             // Call EndGetContext to complete the asynchronous operation.
@@ -89,49 +103,59 @@ namespace CitiBot.Main
             HttpListenerResponse response = context.Response;
             // Construct a response.
             bool noBody = false;
-
             StringBuilder sb = new StringBuilder();
-
-            if (request.Url.AbsoluteUri.EndsWith("status"))
+            try
             {
-                long time = DateTime.Now.Ticks - bot.m_TwitchClient.NextKeepAlive.Ticks;
-                if (time <= TimeSpan.TicksPerHour * 2)
+
+                if (request.Url.AbsoluteUri.EndsWith("status"))
                 {
-                    sb.AppendLine("[STATUS=OK]");
+                    long time = DateTime.Now.Ticks - bot.m_TwitchClient.NextKeepAlive.Ticks;
+                    if (time <= TimeSpan.TicksPerHour * 2)
+                    {
+                        sb.AppendLine("[STATUS=OK]");
+                    }
+                    else
+                    {
+                        sb.AppendLine("[STATUS=ERROR]");
+                    }
+                    sb.Append("Start time : ");
+                    sb.AppendLine(bot.m_StartTime.ToString());
+                    sb.Append("Last keep alive : ");
+                    sb.AppendLine(bot.m_TwitchClient.LastKeepAlive.ToString());
+                    sb.Append("Next keep alive : ");
+                    sb.AppendLine(bot.m_TwitchClient.NextKeepAlive.ToString());
+                    sb.Append("Connected to : ");
+                    sb.AppendLine(bot.m_TwitchClient.GetIPConnected());
+                    sb.Append("Number of parsed messages in the last 30 minutes : ");
+                    sb.AppendLine(bot.m_PluginManager.NumberOfParsedMessagesRecently.ToString());
+                    sb.Append("Number of runned commands in the last 30 minutes : ");
+                    sb.AppendLine(bot.m_PluginManager.NumberOfRunnedCommandsRecently.ToString());
+                }
+                else if (request.Url.AbsoluteUri.EndsWith("triggerKeepAlive"))
+                {
+                    sb.AppendLine("Triggering keep alive");
+                    bot.m_TwitchClient.TriggerNextKeepAlive();
+                }
+                else if (request.Url.AbsoluteUri.EndsWith("allCommands"))
+                {
+                    foreach (string s in bot.m_PluginManager.AllCommands)
+                    {
+                        sb.AppendLine(s);
+                    }
                 }
                 else
                 {
-                    sb.AppendLine("[STATUS=ERROR]");
-                }
-                sb.Append("Start time : ");
-                sb.AppendLine(bot.m_StartTime.ToString());
-                sb.Append("Last keep alive : ");
-                sb.AppendLine(bot.m_TwitchClient.LastKeepAlive.ToString());
-                sb.Append("Next keep alive : ");
-                sb.AppendLine(bot.m_TwitchClient.NextKeepAlive.ToString());
-                sb.Append("Connected to : ");
-                sb.AppendLine(bot.m_TwitchClient.GetIPConnected());
-                sb.Append("Number of parsed messages in the last 30 minutes : ");
-                sb.AppendLine(bot.m_PluginManager.NumberOfParsedMessagesRecently.ToString());
-                sb.Append("Number of runned commands in the last 30 minutes : ");
-                sb.AppendLine(bot.m_PluginManager.NumberOfRunnedCommandsRecently.ToString());
-            }
-            else if (request.Url.AbsoluteUri.EndsWith("triggerKeepAlive"))
-            {
-                sb.AppendLine("Triggering keep alive");
-                bot.m_TwitchClient.TriggerNextKeepAlive();
-            }
-            else if (request.Url.AbsoluteUri.EndsWith("allCommands"))
-            {
-                foreach (string s in bot.m_PluginManager.AllCommands)
-                {
-                    sb.AppendLine(s);
+                    noBody = true;
+                    response.StatusCode = 404;
                 }
             }
-            else
+            catch (Exception ex)
             {
+                Console.WriteLine("[" + DateTime.Now.ToString() + "] Exception in ListenerCallback on port " + m_CallbackPort.ToString());
+                Console.WriteLine(ex);
+
                 noBody = true;
-                response.StatusCode = 404;
+                response.StatusCode = 500;
             }
 
             if (noBody)
@@ -195,14 +219,14 @@ namespace CitiBot.Main
                 m_TwitchClient.Disconnect();
                 m_ReconnectAttempts++;
                 int delay = Math.Min(3600 * 1000, (int)Math.Pow(3, m_ReconnectAttempts) * 1000);
-                Console.WriteLine("Next reconnect in " + delay + " ms");
+                Console.WriteLine("[" + DateTime.Now.ToString() + "]Next reconnect in " + delay + " ms");
                 Thread.Sleep(delay);
 
                 Start();
             }
             else
             {
-                Console.WriteLine("Maximum attempts reached, closing program");
+                Console.WriteLine("[" + DateTime.Now.ToString() + "]Maximum attempts reached, closing program");
                 Environment.Exit(1);
             }
         }

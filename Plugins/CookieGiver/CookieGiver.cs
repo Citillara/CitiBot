@@ -323,7 +323,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (split.Length > 2)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel>
-                if (message.UserType >= TwitchUserTypes.Developper && split[2].StartsWith("#"))
+                if (message.UserType >= TwitchUserTypes.Developer && split[2].StartsWith("#"))
                 {
                     channel = split[2];
                     allowedThroughWhisper = true;
@@ -355,7 +355,7 @@ namespace CitiBot.Plugins.CookieGiver
             var sender_user_database = CookieUser.GetUser(channel, senderDatabaseKey, message.UserId, message.SenderDisplayName);
 
             // Ignores checks if sender is Developper or above
-            if (message.UserType < TwitchUserTypes.Developper)
+            if (message.UserType < TwitchUserTypes.Developer)
             {
 
                 var chan = CookieChannel.GetChannel(message.Channel);
@@ -621,7 +621,7 @@ namespace CitiBot.Plugins.CookieGiver
         private void TestDatabaseCookies(TwitchClient client, TwitchMessage message)
         {
             var channel = message.Channel;
-            if (message.UserType >= TwitchUserTypes.Developper && !message.IsWhisper)
+            if (message.UserType >= TwitchUserTypes.Developer && !message.IsWhisper)
             {
                 string msg = message.Message.Replace("\"", "").Trim();
                 string sub = msg.Substring(msg.IndexOf(' '));
