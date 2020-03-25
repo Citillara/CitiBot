@@ -32,11 +32,11 @@ namespace CitiBot.Main
 
         public Bot(BotSettings settings)
         {
-            m_PluginManager = new PluginManager(this);
             m_BotId = settings.Id;
             m_Name = settings.Name;
             m_Password = settings.Password;
             m_CallbackPort = settings.CallbackPort;
+            m_PluginManager = new PluginManager(this);
             settings.Plugins.ToList().ForEach(p => m_PluginManager.AddPlugin(p.PluginName));
             m_PluginManager.LoadAllPlugins();
         }

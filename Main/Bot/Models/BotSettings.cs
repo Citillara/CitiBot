@@ -24,7 +24,7 @@ namespace CitiBot.Main.Models
         public virtual ICollection<BotPlugin> Plugins { get; set; }
         public virtual ICollection<BotChannel> Channels { get; set; }
 
-        private bool isNew;
+        private bool isNew = false;
 
         public virtual void Save()
         {
@@ -44,10 +44,7 @@ namespace CitiBot.Main.Models
 
             chan = BotChannel.New(channel, this);
             this.Channels.Add(chan);
-
-            chan.Save();
-            this.Save();
-
+            
             return chan;
         }
 

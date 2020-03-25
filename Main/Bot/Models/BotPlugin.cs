@@ -21,7 +21,7 @@ namespace CitiBot.Main.Models
         public virtual string PluginName { get; set; }
         public virtual BotSettings BotSettings { get; set; }
 
-        private bool isNew;
+        private bool isNew = false;
 
         public virtual void Save()
         {

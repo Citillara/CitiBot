@@ -23,7 +23,7 @@ namespace CitiBot.Main.Models
         public virtual GreetingsTypes Greetings { get; set; }
         public virtual AutoJoinSettings AutoJoin { get; set; }
 
-        private bool isNew;
+        private bool isNew = false;
 
         public static BotChannel New(string channel, BotSettings settings, GreetingsTypes greetings = GreetingsTypes.None)
         {
@@ -32,6 +32,7 @@ namespace CitiBot.Main.Models
             n.BotSettings = settings;
             n.Greetings = greetings;
             n.AutoJoin = AutoJoinSettings.Yes;
+            n.isNew = true;
             return n;
         }
 
