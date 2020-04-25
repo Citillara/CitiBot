@@ -204,7 +204,10 @@ namespace CitiBot.Main
             {
                 if (BotSettings.GetById(m_BotId).GetChannel(args.Channel).Greetings == BotChannel.GreetingsTypes.Simple)
                 {
-                    sender.SendMessage(args.Channel, "Joined");
+                    if(System.Diagnostics.Debugger.IsAttached)
+                        sender.SendMessage(args.Channel, "Joined [DEBUG]");
+                    else
+                        sender.SendMessage(args.Channel, "Joined");
                 }
             }
         }

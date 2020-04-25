@@ -495,7 +495,7 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
             var sender = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
-            var target = CookieUser.GetUser(message.Channel, message.Args[1].Replace("@", ""));
+            var target = CookieUser.GetUser(message.Channel, null, null, message.Args[1].Replace("@", ""));
 
             if (sender == null || sender.CookieReceived < amount)
             {
