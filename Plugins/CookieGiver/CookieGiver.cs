@@ -170,7 +170,7 @@ namespace CitiBot.Plugins.CookieGiver
                 return;
             }
 
-            string sub = msg.Substring(msg.IndexOf(' '));
+            string sub = msg.Substring(msg.IndexOf(' ')).Trim();
             if (!sub.ToLowerInvariant().Contains("cookie"))
             {
                 client.SendWhisper(message.SenderName, "Sorry {0}, but the new flavor must contain the word \"cookie\" (singular)", message.SenderDisplayName);
