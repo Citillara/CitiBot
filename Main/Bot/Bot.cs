@@ -120,7 +120,7 @@ namespace CitiBot.Main
                     {
                         // Handled
                     }
-                    if (time <= TimeSpan.TicksPerHour * 2 || ip == null)
+                    if (time <= TimeSpan.TicksPerHour * 2 && ip != null)
                     {
                         sb.AppendLine("[STATUS=OK]");
                     }
