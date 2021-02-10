@@ -73,7 +73,7 @@ namespace CitiBot.Plugins.Twitch.Models
 
             if (val == null)
             {
-                val = New(username, twitchId, displayName);
+                val = New(username ?? displayName, twitchId, displayName ?? username);
                 val.Save();
             }
             else

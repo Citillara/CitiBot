@@ -143,7 +143,7 @@ namespace CitiBot.Plugins.CookieGiver
 
         public override void OnNotice(TwitchClient sender, TwitchNotice notice)
         {
-            if (notice.IsSub)
+            if (notice.SubMessageData.IsSub)
             {
                 OnSub(sender, notice);
             }

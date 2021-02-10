@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -110,7 +111,16 @@ namespace CitiBot.Main
                 if (request.Url.AbsoluteUri.EndsWith("status"))
                 {
                     long time = DateTime.Now.Ticks - bot.m_TwitchClient.NextKeepAlive.Ticks;
-                    if (time <= TimeSpan.TicksPerHour * 2)
+                    string ip = null;
+                    try
+                    {
+                        ip = bot.m_TwitchClient.GetIPConnected();
+                    }
+                    catch (SocketException)
+                    {
+                        // Handled
+                    }
+                    if (time <= TimeSpan.TicksPerHour * 2 || ip == null)
                     {
                         sb.AppendLine("[STATUS=OK]");
                     }
@@ -124,8 +134,8 @@ namespace CitiBot.Main
                     sb.AppendLine(bot.m_TwitchClient.LastKeepAlive.ToString());
                     sb.Append("Next keep alive : ");
                     sb.AppendLine(bot.m_TwitchClient.NextKeepAlive.ToString());
-                    sb.Append("Connected to : ");
-                    sb.AppendLine(bot.m_TwitchClient.GetIPConnected());
+                    sb.Append("Connected to : " + ip ?? "Not connected");
+                    sb.AppendLine();
                     sb.Append("Number of parsed messages in the last 30 minutes : ");
                     sb.AppendLine(bot.m_PluginManager.NumberOfParsedMessagesRecently.ToString());
                     sb.Append("Number of runned commands in the last 30 minutes : ");
@@ -204,7 +214,7 @@ namespace CitiBot.Main
             {
                 if (BotSettings.GetById(m_BotId).GetChannel(args.Channel).Greetings == BotChannel.GreetingsTypes.Simple)
                 {
-                    if(System.Diagnostics.Debugger.IsAttached)
+                    if (System.Diagnostics.Debugger.IsAttached)
                         sender.SendMessage(args.Channel, "Joined [DEBUG]");
                     else
                         sender.SendMessage(args.Channel, "Joined");
