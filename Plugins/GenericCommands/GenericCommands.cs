@@ -126,7 +126,7 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoPyramid(TwitchClient sender, TwitchMessage message)
         {
 
-            if (message.UserType < TwitchUserTypes.Citillara)
+            if (message.UserType < TwitchUserTypes.Founder)
             {
                 //sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Citillara", message.SenderDisplayName);
             }
@@ -249,7 +249,7 @@ namespace CitiBot.Plugins.GenericCommands
 
         public void DoLearnUser(TwitchClient sender, TwitchMessage message)
         {
-            if (message.UserType < TwitchUserTypes.Citillara)
+            if (message.UserType < TwitchUserTypes.Founder)
             {
                 return;
             }

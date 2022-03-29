@@ -3,6 +3,7 @@ using CitiBot.Plugins.CookieGiver.Models;
 using CitiBot.Plugins.Counters.Models;
 using CitiBot.Plugins.Dog.Models;
 using CitiBot.Plugins.Twitch.Models;
+using CitiBot.Plugins.Moderation.Models;
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -30,6 +31,9 @@ namespace CitiBot.Database
         public DbSet<BotSettings> BotSettings { get; set; }
         public DbSet<BotPlugin> BotPlugins { get; set; }
         public DbSet<BotChannel> BotChannels { get; set; }
+
+
+        public DbSet<ModerationBlacklistItem> ModerationBlacklistItems { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

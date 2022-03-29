@@ -37,5 +37,9 @@ namespace CitiBot.Main
         {
 
         }
+        public virtual void OnMessage(TwitchClient sender, TwitchMessage message)
+        {
+
+        }
     }
 }

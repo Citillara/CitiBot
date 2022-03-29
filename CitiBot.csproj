@@ -111,6 +111,8 @@
     <Compile Include="Plugins\Counters\Models\Counter.cs" />
     <Compile Include="Plugins\Dog\Dog.cs" />
     <Compile Include="Plugins\Dog\Models\DogUser.cs" />
+    <Compile Include="Plugins\Moderation\Models\ModerationBlacklistItem.cs" />
+    <Compile Include="Plugins\Moderation\Moderation.cs" />
     <Compile Include="Plugins\GenericCommands\GenericCommands.cs" />
     <Compile Include="Plugins\Twitch\Models\TwitchUser.cs" />
     <Compile Include="Main\Program.cs" />
@@ -156,6 +158,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

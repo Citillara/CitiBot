@@ -245,7 +245,7 @@ namespace CitiBot.Plugins.CookieGiver
         }
         private void DisplayDatabaseCookieCount(TwitchClient client, TwitchMessage message)
         {
-            if (message.UserType < TwitchUserTypes.Citillara)
+            if (message.UserType < TwitchUserTypes.Founder)
                 return;
             client.SendMessage(message.Channel, "Database contains {0} cookies", CookieFlavour.GetCookieCount());
         }
@@ -329,7 +329,7 @@ namespace CitiBot.Plugins.CookieGiver
                     allowedThroughWhisper = true;
                 }
                 // Sends defined amount of cookies to a target in the channel. Usage !cookie <target> <amount>
-                else if (message.UserType >= TwitchUserTypes.Citillara && int.TryParse(split[2], out forcedCookies))
+                else if (message.UserType >= TwitchUserTypes.Founder && int.TryParse(split[2], out forcedCookies))
                 {
                     allowedThroughWhisper = false;
                 }
@@ -337,7 +337,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (split.Length == 4)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel> <amount>
-                if (message.UserType >= TwitchUserTypes.Citillara)
+                if (message.UserType >= TwitchUserTypes.Founder)
                 {
                     int.TryParse(split[3], out forcedCookies);
                     allowedThroughWhisper = true;

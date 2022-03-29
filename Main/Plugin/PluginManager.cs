@@ -20,7 +20,7 @@ namespace CitiBot.Main
             { "CookieGiver", typeof(CitiBot.Plugins.CookieGiver.CookieGiver) },
             { "Dog", typeof(CitiBot.Plugins.Dog.Dog) },
             { "Counter", typeof(CitiBot.Plugins.Counters.CountersCommands) },
-
+            { "Moderation", typeof(CitiBot.Plugins.Moderation.Moderation) },
         };
 
         private Dictionary<string, OnMessageAction> m_commands;
@@ -93,6 +93,9 @@ namespace CitiBot.Main
             try
             {
                 m_NumberOfParsedMessages.IncrementCounter();
+
+                m_plugins.ForEach(p => p.OnMessage(client, message));
+
                 if (message.BitsSent != 0)
                 {
                     m_plugins.ForEach(p => p.OnBitsSent(client, message));
