@@ -32,6 +32,8 @@ namespace CitiBot.Database
         public DbSet<BotPlugin> BotPlugins { get; set; }
         public DbSet<BotChannel> BotChannels { get; set; }
 
+        public DbSet<Log> Logs { get; set; }
+        public DbSet<GlobalSetting> GlobalSettings { get; set; }
 
         public DbSet<ModerationBlacklistItem> ModerationBlacklistItems { get; set; }
 

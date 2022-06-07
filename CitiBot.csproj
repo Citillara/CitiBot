@@ -95,6 +95,8 @@
     <Compile Include="Main\Bot\Models\BotPlugin.cs" />
     <Compile Include="Main\Bot\Models\BotSettings.cs" />
     <Compile Include="Main\Bot\StatsCounter.cs" />
+    <Compile Include="Main\Models\GlobalSetting.cs" />
+    <Compile Include="Main\Models\Log.cs" />
     <Compile Include="Main\Plugin\PluginManager.cs" />
     <Compile Include="Database\Registry.cs" />
     <Compile Include="Main\Extensions.cs" />

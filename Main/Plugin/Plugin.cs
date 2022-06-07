@@ -10,6 +10,8 @@ namespace CitiBot.Main
 {
     public abstract class Plugin
     {
+        protected internal PluginManager Manager { get; set; }
+
         public abstract void OnLoad(PluginManager commandsManager);
 
         /// <summary>

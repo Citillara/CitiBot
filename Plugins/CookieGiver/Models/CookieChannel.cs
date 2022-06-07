@@ -22,6 +22,7 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public virtual int CookieCheers { get; set; }
         public virtual string SubGreetings { get; set; }
         public virtual CookieChannelStates Status { get; set; }
+        public virtual string CustomCookieEmote { get; set; }
 
         public virtual ICollection<CookiePoll> Polls { get; set; }
 
@@ -38,7 +39,8 @@ namespace CitiBot.Plugins.CookieGiver.Models
                     BribeDelay = 600,
                     CookieDelay = 300,
                     CookieCheers = 0,
-                    Status = CookieChannelStates.Enabled
+                    Status = CookieChannelStates.Enabled,
+                    CustomCookieEmote = null,
                 };
             return r;
         }

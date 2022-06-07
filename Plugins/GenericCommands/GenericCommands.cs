@@ -56,8 +56,6 @@ namespace CitiBot.Plugins.GenericCommands
                 new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff", "!timedif") { ChannelCooldown = 5 });
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoUptime, "!uptime") { ChannelCooldown = 5 });
-            pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoVersion, "!version") { ChannelCooldown = 5 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoToAlBhed, "!toal", "!toalbhed", "!toalbed", "!toalbehd") { UserCooldown = 30 });
@@ -67,6 +65,9 @@ namespace CitiBot.Plugins.GenericCommands
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoLearnUser, "!learn"));
+
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoBonk, "!bonk", "boink") { ChannelCooldown = 5 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoSetAutoJoin, "!setautojoin"));
@@ -82,6 +83,24 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoBug(TwitchClient sender, TwitchMessage message)
         {
             sender.SendMessage(message.Channel, "Please report any bugs/suggestion at https://github.com/Citillara/CitiBot/issues");
+        }
+        public void DoBonk(TwitchClient sender, TwitchMessage message)
+        {
+            if(message.Args.Count() > 1)
+            {
+                if(message.Args[1].ToLowerInvariant() == "citibot")
+                {
+                    sender.SendAction(message.Channel, "selfbonks citiBoink2");
+                }
+                else
+                {
+                    sender.SendAction(message.Channel, "boinks " + message.Args[1] + " citiBoink2");
+                }
+            }
+            else
+            {
+                sender.SendAction(message.Channel, "selfbonks citiBoink2");
+            }
         }
         public void DoJoin(TwitchClient sender, TwitchMessage message)
         {
@@ -211,10 +230,6 @@ namespace CitiBot.Plugins.GenericCommands
         {
             var d = new TimeSpan(DateTime.Now.Ticks - m_startTime.Ticks);
             sender.SendMessage(message.Channel, "Bot uptime : {0}d {1}h {2}m {3}s", d.Days, d.Hours, d.Minutes, d.Seconds);
-        }
-        public void DoVersion(TwitchClient sender, TwitchMessage message)
-        {
-            sender.SendMessage(message.Channel, "IRC {0}, Twitch {1}, CitiBot {2}", Irc.IrcClient.Version, TwitchClient.Version, Program.Version);
         }
         public void DoSetAutoJoin(TwitchClient sender, TwitchMessage message)
         {

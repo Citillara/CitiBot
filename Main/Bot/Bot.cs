@@ -62,6 +62,8 @@ namespace CitiBot.Main
                 m_TwitchClient.LogLevel = Twitch.Models.MessageLevel.Info;
             m_TwitchClient.AutoDetectSendWhispers = true;
             m_TwitchClient.Connect();
+
+
             m_StartTime = DateTime.Now;
         }
 

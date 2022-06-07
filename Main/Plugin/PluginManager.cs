@@ -1,4 +1,4 @@
-﻿#define BREAK
+﻿//#define BREAK
 
 using CitiBot.Database;
 using CitiBot.Main.Models;
@@ -57,6 +57,7 @@ namespace CitiBot.Main
         public void AddPlugin(string plugin)
         {
             Plugin p = (Plugin)Activator.CreateInstance(m_availablePlugins[plugin]);
+            p.Manager = this;
             m_plugins.Add(p);
         }
 
@@ -184,6 +185,8 @@ namespace CitiBot.Main
                     Registry.Instance.Close();
                 try
                 {
+                    Log.AddTechnicalLog(DateTime.Now, Log.LogLevel.Debug, this.Plugin.Manager.m_BotId.ToString(), this.Action.Method.Name, message.ToString());
+
                     bool runNext = this.Plugin.BeforeCommand(client, message);
 
                     if (runNext)
@@ -203,6 +206,7 @@ namespace CitiBot.Main
                 }
                 catch (Exception e)
                 {
+                    Log.AddTechnicalLog(DateTime.Now, Log.LogLevel.Warn, this.Plugin.Manager.m_BotId.ToString(), this.Action.Method.Name, message.ToString());
                     if (Registry.Instance != null)
                         Registry.Instance.Close();
 #if BREAK

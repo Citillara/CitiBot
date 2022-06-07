@@ -134,6 +134,18 @@ namespace CitiBot.Plugins.CookieGiver
                  "!cookiesstop"
                  )
              { ChannelCooldown = 10 });
+
+            pluginManager.RegisterCommand(
+             new PluginManager.OnMessageAction(this, ChangeStringSettings,
+                 "!setcustomcookie"
+                 )
+             { ChannelCooldown = 10 });
+
+            pluginManager.RegisterCommand(
+             new PluginManager.OnMessageAction(this, ResetCookieEmote,
+                 "!resetcustomcookie"
+                 )
+             { ChannelCooldown = 10 });
         }
 
         public override bool BeforeCommand(TwitchClient sender, TwitchMessage message)
@@ -478,7 +490,9 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                msg = string.Format("gives {0} {1} to {2} NomNom {3}", NumberToWords(quantity), flavor, target.TwitchUser.BusinessDisplayName, modifier);
+                string custom = CookieChannel.GetChannel(channel).CustomCookieEmote;
+                string cookie = custom != null ? custom : "NomNom";
+                msg = string.Format("gives {0} {1} to {2} {3} {4}", NumberToWords(quantity), flavor, target.TwitchUser.BusinessDisplayName, cookie, modifier);
             }
             if (quantity > 1)
                 msg = msg.Replace("cookie", "cookies");
@@ -642,6 +656,7 @@ namespace CitiBot.Plugins.CookieGiver
                 chan.Status = CookieChannel.CookieChannelStates.Enabled;
                 chan.Save();
                 client.SendMessage(message.Channel, "Cookies have been enabled");
+                CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CookieChannelStates", $"{message.SenderName} has enabled the cookies");
             }
             else
             {
@@ -657,6 +672,7 @@ namespace CitiBot.Plugins.CookieGiver
                 chan.Status = CookieChannel.CookieChannelStates.Disabled;
                 chan.Save();
                 client.SendMessage(message.Channel, "Cookies have been disabled");
+                CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CookieChannelStates", $"{message.SenderName} has disabled the cookies");
             }
             else
             {
@@ -681,10 +697,12 @@ namespace CitiBot.Plugins.CookieGiver
                             case "!cookiedelay":
                                 channelp.CookieDelay = time;
                                 client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
+                                CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CookieDelay", $"{message.SenderName} has set the cookie delay to : {time}");
                                 break;
                             case "!bribedelay":
                                 channelp.BribeDelay = time;
                                 client.SendMessage(message.Channel, "Bribe delay has been set to {0} seconds", time);
+                                CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CookieDelay", $"{message.SenderName} has set the bribe delay to : {time}");
                                 break;
                             default: break;
                         }
@@ -744,12 +762,32 @@ namespace CitiBot.Plugins.CookieGiver
                 case "!setsubgreetings":
                     channelp.SubGreetings = sub;
                     client.SendMessage(message.Channel, "New subscribers message has been set to : " + sub);
+                    CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "SubGreetings", $"{message.SenderName} has set new subscribers message to : {sub}");
+                    break;
+                case "!setcustomcookie":
+                    channelp.CustomCookieEmote = sub;
+                    client.SendMessage(message.Channel, "Custom cookie emote has been set to : " + sub);
+                    CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CustomCookieEmote", $"{message.SenderName} has set custom cookie emote to : {sub}");
                     break;
                 default: break;
             }
             channelp.Save();
-
         }
+        private void ResetCookieEmote(TwitchClient client, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+            {
+                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                return;
+            }
+            if (message.UserType >= TwitchUserTypes.Broadcaster)
+            {
+                var channelp = CookieChannel.GetChannel(message.Channel);
+                channelp.CustomCookieEmote = null;
+                channelp.Save();
+            }
+        }
+
         private void ChangeNumericSettings(TwitchClient client, TwitchMessage message)
         {
             if (message.IsWhisper)
