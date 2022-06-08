@@ -21,7 +21,7 @@ namespace CitiBot.Database
         public Registry()
             : base(ConnectionString)
         {
-            this.Database.Log = Log;
+            //this.Database.Log = Log;
             this.Configuration.UseDatabaseNullSemantics = true;
         }
 

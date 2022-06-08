@@ -16,7 +16,7 @@ namespace CitiBot.Main
             if (m_count < 1)
             {
                 m_rand = new Random();
-                m_count = 1000;
+                m_count = 100000;
             }
             m_count--;
 

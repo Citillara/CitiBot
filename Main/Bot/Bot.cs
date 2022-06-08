@@ -17,12 +17,12 @@ namespace CitiBot.Main
         private readonly string m_Name;
         private readonly string m_Password;
         private readonly short m_CallbackPort;
-        private PluginManager m_PluginManager;
+        private readonly PluginManager m_PluginManager;
         private TwitchClient m_TwitchClient;
         private HttpListener m_HttpListener;
         private Thread m_HttpListenerThread;
         private Thread m_CleanUpThread;
-        private bool m_CleanUpLoop;
+        private bool m_CleanUpThreadLoop;
         private bool m_HttpListenerThreadLoop;
         private ManualResetEvent m_HttpListenerReset;
         private ManualResetEvent m_CleanUpReset;
@@ -80,7 +80,7 @@ namespace CitiBot.Main
         void Stop()
         {
             m_HttpListenerThreadLoop = false;
-            m_CleanUpLoop = false;
+            m_CleanUpThreadLoop = false;
             m_CleanUpReset.Set();
             m_HttpListenerThread.Abort();
             m_TwitchClient.Disconnect();
@@ -90,7 +90,7 @@ namespace CitiBot.Main
         {
             m_CleanUpReset = new ManualResetEvent(false);
             bool doOnce = true;
-            while (m_CleanUpLoop)
+            while (m_CleanUpThreadLoop)
             {
                 if (doOnce)
                 {

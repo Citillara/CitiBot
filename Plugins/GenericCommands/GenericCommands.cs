@@ -15,7 +15,6 @@ namespace CitiBot.Plugins.GenericCommands
 {
     public class GenericCommands : Plugin
     {
-        private Random m_random = new Random();
         private readonly string TWITCH_URL = "https://twitch.tv/";
         private readonly int RAID_REPEAT = 4;
         private Dictionary<string, string> m_raidMessages = new Dictionary<string, string>();
@@ -27,16 +26,8 @@ namespace CitiBot.Plugins.GenericCommands
             m_botId = pluginManager.BotId;
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoBug, "!bug") { ChannelCooldown = 30 });
-            if (Environment.MachineName == "KERNEL01")
-            {
-                pluginManager.RegisterCommand(
-                    new PluginManager.OnMessageAction(this, DoJoin, "!join", "!join2"));
-            }
-            else
-            {
-                pluginManager.RegisterCommand(
-                    new PluginManager.OnMessageAction(this, DoJoin, "!join"));
-            }
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoJoin, "!join"));
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoPart, "!part"));
             pluginManager.RegisterCommand(
@@ -48,10 +39,7 @@ namespace CitiBot.Plugins.GenericCommands
 
 
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoRoll,
-                    "!d2", "!d4", "!d6", "!d8", "!d10", "!d12", "!d20", "!d100", "!roll"
-                    )
-                { UserChannelCooldown = 30 });
+                new PluginManager.OnMessageAction(this, DoRoll, "!roll") { UserChannelCooldown = 30 });
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff", "!timedif") { ChannelCooldown = 5 });
             pluginManager.RegisterCommand(
@@ -78,7 +66,6 @@ namespace CitiBot.Plugins.GenericCommands
                 new PluginManager.OnMessageAction(this, DoFahrenheitToCelcius, "!ftoc", "!getc") { UserCooldown = 10 });
 
         }
-
 
         public void DoBug(TwitchClient sender, TwitchMessage message)
         {
@@ -186,25 +173,12 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoRoll(TwitchClient sender, TwitchMessage message)  
         {
             int roll = 0;
-            switch (message.Command)
-            {
-                case "!d2": roll = 2; break;
-                case "!d3": roll = 3; break;
-                case "!d4": roll = 4; break;
-                case "!d6": roll = 6; break;
-                case "!d8": roll = 8; break;
-                case "!d10": roll = 10; break;
-                case "!d12": roll = 12; break;
-                case "!d20": roll = 20; break;
-                case "!d100": roll = 100; break;
-                case "!roll":
-                    if (message.Args.Length < 2 || !int.TryParse(message.Args[1], out roll) || roll <= 0)
-                        return;
-                    else break;
-                default: return;
-            }
+
+            if (message.Args.Length < 2 || !int.TryParse(message.Args[1], out roll) || roll <= 0)
+                return;
+
             sender.AutoDetectSendWhispers = true;
-            sender.SendMessage(message.Channel, string.Format("{0} rolls a {1}", message.SenderDisplayName, m_random.Next(1, roll + 1)));
+            sender.SendMessage(message.Channel, string.Format("{0} rolls a {1}", message.SenderDisplayName, RNG.Next(1, roll)));
         }
         public void DoTimeDiff(TwitchClient sender, TwitchMessage message)
         {
@@ -306,8 +280,8 @@ namespace CitiBot.Plugins.GenericCommands
             sender.SendMessage(message.Channel, "{0} learned successfully", user.DisplayName);
         }
 
-        public const string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        public const string ALBHED = "YPLTAVKREZGMSHUBXNCDIJFQOWypltavkrezgmshubxncdijfqow";
+        public static readonly string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        public static readonly string ALBHED = "YPLTAVKREZGMSHUBXNCDIJFQOWypltavkrezgmshubxncdijfqow";
 
         private void DoToAlBhed(TwitchClient sender, TwitchMessage message)
         {
@@ -315,7 +289,6 @@ namespace CitiBot.Plugins.GenericCommands
                 return;
             sender.SendWhisper(message.Channel, Substitute(message.Message, ALPHABET, ALBHED));
         }
-
 
         private void DoToFromBhed(TwitchClient sender, TwitchMessage message)
         {
@@ -378,7 +351,6 @@ namespace CitiBot.Plugins.GenericCommands
                 action();
             }
         }
-
 
         private void DoCelciusToFahrenheit(TwitchClient sender, TwitchMessage message)
         {
