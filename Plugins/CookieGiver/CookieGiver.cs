@@ -1,4 +1,5 @@
 ﻿using CitiBot.Main;
+using CitiBot.Main.Models;
 using CitiBot.Plugins.CookieGiver.Models;
 using CitiBot.Plugins.Twitch.Models;
 using System;
@@ -17,11 +18,8 @@ namespace CitiBot.Plugins.CookieGiver
 {
     public class CookieGiver : Plugin
     {
-
         private const int CAL_PER_COOKIE = 31;
-
-        private List<Thread> m_threads = new List<Thread>();
-
+        
         public CookieGiver()
         {
             Load();
@@ -346,20 +344,19 @@ namespace CitiBot.Plugins.CookieGiver
                     allowedThroughWhisper = false;
                 }
             }
-            if (split.Length == 4)
+            if (split.Length == 4 && message.UserType >= TwitchUserTypes.Founder)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel> <amount>
-                if (message.UserType >= TwitchUserTypes.Founder)
-                {
-                    int.TryParse(split[3], out forcedCookies);
-                    allowedThroughWhisper = true;
-                }
+                int.TryParse(split[3], out forcedCookies);
+                allowedThroughWhisper = true;
             }
+
             if (message.IsWhisper && !allowedThroughWhisper)
             {
                 client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
                 return;
             }
+
             // Sets the target depending if it's the sender or not
             string targetDatabaseKey = targetIsNotSender ? target.ToLowerInvariant() : message.SenderName;
             string senderDatabaseKey = message.SenderName;
@@ -491,7 +488,7 @@ namespace CitiBot.Plugins.CookieGiver
             else
             {
                 string custom = CookieChannel.GetChannel(channel).CustomCookieEmote;
-                string cookie = custom != null ? custom : "NomNom";
+                string cookie = custom ?? "NomNom";
                 msg = string.Format("gives {0} {1} to {2} {3} {4}", NumberToWords(quantity), flavor, target.TwitchUser.BusinessDisplayName, cookie, modifier);
             }
             if (quantity > 1)
@@ -687,27 +684,26 @@ namespace CitiBot.Plugins.CookieGiver
             {
                 string[] split = message.Message.Split(' ');
                 int time = 0;
-                if (split.Length > 1 && int.TryParse(split[1], out time))
+                if (split.Length > 1 && int.TryParse(split[1], out time) && time > 2)
                 {
-                    if (time > 2)
+                    var channelp = CookieChannel.GetChannel(channel);
+                    switch (message.Command)
                     {
-                        var channelp = CookieChannel.GetChannel(channel);
-                        switch (message.Command)
-                        {
-                            case "!cookiedelay":
-                                channelp.CookieDelay = time;
-                                client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
-                                CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CookieDelay", $"{message.SenderName} has set the cookie delay to : {time}");
-                                break;
-                            case "!bribedelay":
-                                channelp.BribeDelay = time;
-                                client.SendMessage(message.Channel, "Bribe delay has been set to {0} seconds", time);
-                                CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CookieDelay", $"{message.SenderName} has set the bribe delay to : {time}");
-                                break;
-                            default: break;
-                        }
-                        channelp.Save();
+                        case "!cookiedelay":
+                            channelp.CookieDelay = time;
+                            client.SendMessage(message.Channel, "Cookie delay has been set to {0} seconds", time);
+                            Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel,
+                                "CookieDelay", $"{message.SenderName} has set the cookie delay to : {time}");
+                            break;
+                        case "!bribedelay":
+                            channelp.BribeDelay = time;
+                            client.SendMessage(message.Channel, "Bribe delay has been set to {0} seconds", time);
+                            Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel,
+                                "CookieDelay", $"{message.SenderName} has set the bribe delay to : {time}");
+                            break;
+                        default: break;
                     }
+                    channelp.Save();
                 }
                 else
                 {
@@ -762,12 +758,14 @@ namespace CitiBot.Plugins.CookieGiver
                 case "!setsubgreetings":
                     channelp.SubGreetings = sub;
                     client.SendMessage(message.Channel, "New subscribers message has been set to : " + sub);
-                    CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "SubGreetings", $"{message.SenderName} has set new subscribers message to : {sub}");
+                    Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "SubGreetings",
+                        $"{message.SenderName} has set new subscribers message to : {sub}");
                     break;
                 case "!setcustomcookie":
                     channelp.CustomCookieEmote = sub;
                     client.SendMessage(message.Channel, "Custom cookie emote has been set to : " + sub);
-                    CitiBot.Main.Models.Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CustomCookieEmote", $"{message.SenderName} has set custom cookie emote to : {sub}");
+                    Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CustomCookieEmote", 
+                        $"{message.SenderName} has set custom cookie emote to : {sub}");
                     break;
                 default: break;
             }
@@ -884,7 +882,8 @@ namespace CitiBot.Plugins.CookieGiver
                 if (words != "")
                     words += "and ";
 
-                var unitsMap = new[] { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen" };
+                var unitsMap = new[] { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", 
+                    "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen" };
                 var tensMap = new[] { "zero", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety" };
 
                 if (number < 20)
@@ -927,9 +926,9 @@ namespace CitiBot.Plugins.CookieGiver
             if (ts.TotalDays > 1)
                 return string.Format("{0}d {1}h {2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
             else if (ts.TotalHours > 1)
-                return string.Format("{1}h {2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
+                return string.Format("{0}h {1}min of {2}", ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
             else
-                return string.Format("{2}min of {3}", ts.Days, ts.Hours, ts.Minutes, activity.Text.ToLowerInvariant());
+                return string.Format("{0}min of {1}", ts.Minutes, activity.Text.ToLowerInvariant());
 
         }
 

@@ -8,9 +8,9 @@ namespace CitiBot.Main
 {
     public class StatsCounter
     {
-        private long m_RetentionInterval;
+        private readonly long m_RetentionInterval;
         private List<long> m_data;
-        private object m_lockData;
+        private readonly object m_lockData;
         private long m_counterCache;
         private long m_counterLastChecked;
         private long m_counterCacheTime;

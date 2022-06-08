@@ -18,19 +18,18 @@ namespace CitiBot.Main
         { 
             { "GenericCommands", typeof(CitiBot.Plugins.GenericCommands.GenericCommands) },
             { "CookieGiver", typeof(CitiBot.Plugins.CookieGiver.CookieGiver) },
-            { "Dog", typeof(CitiBot.Plugins.Dog.Dog) },
             { "Counter", typeof(CitiBot.Plugins.Counters.CountersCommands) },
             { "Moderation", typeof(CitiBot.Plugins.Moderation.Moderation) },
         };
 
-        private Dictionary<string, OnMessageAction> m_commands;
+        private readonly Dictionary<string, OnMessageAction> m_commands;
 
-        private List<Plugin> m_plugins;
+        private readonly List<Plugin> m_plugins;
 
-        private int m_BotId;
+        private readonly int m_BotId;
         
-        private StatsCounter m_NumberOfParsedMessages;
-        private StatsCounter m_NumberOfRunnedCommands;
+        private readonly StatsCounter m_NumberOfParsedMessages;
+        private readonly StatsCounter m_NumberOfRunnedCommands;
 
         public long NumberOfParsedMessagesRecently { get { return m_NumberOfParsedMessages.GetCount(); } }
         public long NumberOfRunnedCommandsRecently { get { return m_NumberOfRunnedCommands.GetCount(); } }
@@ -131,6 +130,11 @@ namespace CitiBot.Main
             }
         }
 
+        public void CleanUp()
+        {
+            m_commands.Values.ToList().ForEach(p => p.CleanUp());
+        }
+
         public class OnMessageAction
         {
             protected internal Plugin Plugin;
@@ -144,7 +148,7 @@ namespace CitiBot.Main
             public int UserChannelCooldown { get; set; }
             public int ChannelCooldown { get; set; }
 
-            private Dictionary<string, DateTime> m_cooldowns = new Dictionary<string,DateTime>();
+            private readonly Dictionary<string, DateTime> m_cooldowns = new Dictionary<string,DateTime>();
 
             public OnMessageAction(Plugin plugin, Action<TwitchClient, TwitchMessage> action)
             {
@@ -238,20 +242,40 @@ namespace CitiBot.Main
                 }
             }
 
+            private readonly object m_cooldownsLock = new object();
+
             private bool CheckKey(string key, int cooldown)
             {
                 DateTime date = DateTime.MinValue;
                 DateTime now = DateTime.Now;
-                bool found = m_cooldowns.TryGetValue(key, out date);
-                if (!found)
+                lock (m_cooldownsLock)
                 {
-                    m_cooldowns.Add(key, now);
-                    return true;
+                    bool found = m_cooldowns.TryGetValue(key, out date);
+                    if (!found)
+                    {
+                        m_cooldowns.Add(key, now);
+                        return true;
+                    }
+                    bool result = now > date.AddSeconds(cooldown);
+                    if (result)
+                        m_cooldowns[key] = now;
+                    return result;
                 }
-                bool result = now > date.AddSeconds(cooldown);
-                if (result)
-                    m_cooldowns[key] = now;
-                return result;
+            }
+
+            public void CleanUp()
+            {
+                DateTime oldnow = DateTime.Now.AddHours(-1);
+                List<string> list = new List<string>();
+                lock (m_cooldownsLock)
+                {
+                    foreach (KeyValuePair<string, DateTime> kvp in m_cooldowns)
+                        if (kvp.Value < oldnow)
+                            list.Add(kvp.Key);
+
+                    foreach (string key in list)
+                        m_cooldowns.Remove(key);
+                }
             }
         }
     }

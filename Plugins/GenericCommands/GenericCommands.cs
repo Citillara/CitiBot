@@ -16,10 +16,10 @@ namespace CitiBot.Plugins.GenericCommands
     public class GenericCommands : Plugin
     {
         private Random m_random = new Random();
-        public readonly string TWITCH_URL = "https://twitch.tv/";
-        public readonly int RAID_REPEAT = 4;
+        private readonly string TWITCH_URL = "https://twitch.tv/";
+        private readonly int RAID_REPEAT = 4;
         private Dictionary<string, string> m_raidMessages = new Dictionary<string, string>();
-        private DateTime m_startTime = DateTime.Now;
+        private readonly DateTime m_startTime = DateTime.Now;
         private int m_botId;
 
         public override void OnLoad(PluginManager pluginManager)
@@ -145,11 +145,7 @@ namespace CitiBot.Plugins.GenericCommands
         public void DoPyramid(TwitchClient sender, TwitchMessage message)
         {
 
-            if (message.UserType < TwitchUserTypes.Founder)
-            {
-                //sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Citillara", message.SenderDisplayName);
-            }
-            else
+            if (message.UserType >= TwitchUserTypes.Founder)
             {
                 var icon = message.Args[1] + " ";
                 sender.SendMessage(message.Channel, icon);
@@ -187,7 +183,7 @@ namespace CitiBot.Plugins.GenericCommands
                 }
             }
         }
-        public void DoRoll(TwitchClient sender, TwitchMessage message)
+        public void DoRoll(TwitchClient sender, TwitchMessage message)  
         {
             int roll = 0;
             switch (message.Command)
@@ -257,7 +253,6 @@ namespace CitiBot.Plugins.GenericCommands
                             sender.SendMessage(message.Channel, "Autojoin disabled");
                         }
                         return;
-                    default: break;
                 }
             }
         }
@@ -418,7 +413,10 @@ namespace CitiBot.Plugins.GenericCommands
                         sender.SendMessage(message.Channel, "{0:0.0} °C", c);
                     }
                 }
-                catch { }
+                catch 
+                {
+                    // Do nothing
+                }
             }
         }
         static private decimal ParseTemperatureIdenpendently(string data)

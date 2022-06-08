@@ -111,8 +111,6 @@
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
     <Compile Include="Plugins\Counters\CountersCommands.cs" />
     <Compile Include="Plugins\Counters\Models\Counter.cs" />
-    <Compile Include="Plugins\Dog\Dog.cs" />
-    <Compile Include="Plugins\Dog\Models\DogUser.cs" />
     <Compile Include="Plugins\Moderation\Models\ModerationBlacklistItem.cs" />
     <Compile Include="Plugins\Moderation\Moderation.cs" />
     <Compile Include="Plugins\GenericCommands\GenericCommands.cs" />

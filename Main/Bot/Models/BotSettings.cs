@@ -24,11 +24,9 @@ namespace CitiBot.Main.Models
         public virtual ICollection<BotPlugin> Plugins { get; set; }
         public virtual ICollection<BotChannel> Channels { get; set; }
 
-        private bool isNew = false;
-
         public virtual void Save()
         {
-            this.Save(isNew);
+            this.Save(false);
         }
 
         public ICollection<BotChannel> GetAutoJoinChannels()

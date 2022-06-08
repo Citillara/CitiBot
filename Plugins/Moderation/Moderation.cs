@@ -15,8 +15,8 @@ namespace CitiBot.Plugins.Moderation
 {
     public class Moderation : Plugin
     {
-        private List<string> m_all_blacklistitems = new List<string>();
-        private Dictionary<string, List<string>> m_channel_blacklist = new Dictionary<string, List<string>>();
+        private readonly List<string> m_all_blacklistitems = new List<string>();
+        private readonly Dictionary<string, List<string>> m_channel_blacklist = new Dictionary<string, List<string>>();
 
         public override void OnLoad(PluginManager pluginManager)
         {

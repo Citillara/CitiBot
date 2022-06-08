@@ -12,10 +12,10 @@ namespace CitiBot.Main.Models
     [Table("t_settings")]
     public class GlobalSetting : BaseModel<GlobalSetting>
     {
-        private static Dictionary<string, string> _SettingsCache = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> _SettingsCache = new Dictionary<string, string>();
         private static DateTime _NextUpdateTime = DateTime.MinValue;
 
-        public static TimeSpan _CacheDuration = new TimeSpan(0, 5, 0);
+        public static readonly TimeSpan _CacheDuration = new TimeSpan(0, 5, 0);
 
         [Key]
         public virtual string Name { get; set; }

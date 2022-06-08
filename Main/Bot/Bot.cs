@@ -11,23 +11,28 @@ using Twitch;
 
 namespace CitiBot.Main
 {
-    public class Bot
+    public class Bot : IDisposable
     {
-        private int m_BotId;
-        private string m_Name;
-        private string m_Password;
-        private short m_CallbackPort;
+        private readonly int m_BotId;
+        private readonly string m_Name;
+        private readonly string m_Password;
+        private readonly short m_CallbackPort;
         private PluginManager m_PluginManager;
         private TwitchClient m_TwitchClient;
         private HttpListener m_HttpListener;
         private Thread m_HttpListenerThread;
+        private Thread m_CleanUpThread;
+        private bool m_CleanUpLoop;
         private bool m_HttpListenerThreadLoop;
         private ManualResetEvent m_HttpListenerReset;
+        private ManualResetEvent m_CleanUpReset;
         private DateTime m_StartTime;
 
 
         private int m_ReconnectAttempts = 0;
         private const int MAX_RECONNECT_ATTEMPS = 15;
+
+        private readonly int m_CleanUpLoopWait = 2 * 3600 * 1000;
 
         public int Id { get { return m_BotId; } }
 
@@ -63,8 +68,40 @@ namespace CitiBot.Main
             m_TwitchClient.AutoDetectSendWhispers = true;
             m_TwitchClient.Connect();
 
+            if (m_CleanUpThread == null)
+            {
+                m_CleanUpThread = new Thread(new ThreadStart(CleanUpThread));
+                m_CleanUpThread.Start();
+            }
 
             m_StartTime = DateTime.Now;
+        }
+
+        void Stop()
+        {
+            m_HttpListenerThreadLoop = false;
+            m_CleanUpLoop = false;
+            m_CleanUpReset.Set();
+            m_HttpListenerThread.Abort();
+            m_TwitchClient.Disconnect();
+        }
+
+        void CleanUpThread()
+        {
+            m_CleanUpReset = new ManualResetEvent(false);
+            bool doOnce = true;
+            while (m_CleanUpLoop)
+            {
+                if (doOnce)
+                {
+                    doOnce = false;
+                }
+                else
+                {
+                    m_PluginManager.CleanUp();
+                }
+                m_CleanUpReset.WaitOne(m_CleanUpLoopWait);
+            }
         }
 
         void HttpListenerThread()
@@ -83,7 +120,7 @@ namespace CitiBot.Main
                 try
                 {
                     m_HttpListenerReset.Reset();
-                    IAsyncResult result = m_HttpListener.BeginGetContext(new AsyncCallback(ListenerCallback), this);
+                    m_HttpListener.BeginGetContext(new AsyncCallback(ListenerCallback), this);
                     m_HttpListenerReset.WaitOne();
                 }
                 catch (Exception e)
@@ -95,6 +132,8 @@ namespace CitiBot.Main
             }
             Console.WriteLine("[" + DateTime.Now.ToString() + "] Closing HTTPListener on port " + m_CallbackPort.ToString());
         }
+
+        private static readonly TimeSpan m_KeepAliveMaxTimeout = new TimeSpan(2, 0, 0);
 
         public void ListenerCallback(IAsyncResult result)
         {
@@ -122,7 +161,7 @@ namespace CitiBot.Main
                     {
                         // Handled
                     }
-                    if (time <= TimeSpan.TicksPerHour * 2 && ip != null)
+                    if (ip != null && time <= m_KeepAliveMaxTimeout.Ticks)
                     {
                         sb.AppendLine("[STATUS=OK]");
                     }
@@ -176,7 +215,7 @@ namespace CitiBot.Main
             }
             else
             {
-                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(sb.ToString()); ;
+                byte[] buffer = Encoding.UTF8.GetBytes(sb.ToString());
                 // Get a response stream and write the response to it.
                 response.ContentType = " text/plain";
                 response.ContentLength64 = buffer.Length;
@@ -189,7 +228,6 @@ namespace CitiBot.Main
             }
             bot.m_HttpListenerReset.Set();
         }
-
 
         void m_TwitchClient_OnNotice(TwitchClient sender, Twitch.Models.TwitchNotice args)
         {
@@ -226,13 +264,15 @@ namespace CitiBot.Main
 
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
-            Console.WriteLine("[" + DateTime.Now.ToString() + "] Disconnected : wasManualDisconnect = " + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
+            Console.WriteLine("[" + DateTime.Now.ToString() + "] Disconnected : wasManualDisconnect = " 
+                + wasManualDisconnect.ToString() + " ; m_ReconnectAttempts = " + m_ReconnectAttempts.ToString());
             if (wasManualDisconnect)
                 return;
             if (m_ReconnectAttempts < MAX_RECONNECT_ATTEMPS)
             {
                 m_TwitchClient.Disconnect();
                 m_ReconnectAttempts++;
+                // Exponential backoff, max 1 hour
                 int delay = Math.Min(3600 * 1000, (int)Math.Pow(3, m_ReconnectAttempts) * 1000);
                 Console.WriteLine("[" + DateTime.Now.ToString() + "]Next reconnect in " + delay + " ms");
                 Thread.Sleep(delay);
@@ -246,5 +286,10 @@ namespace CitiBot.Main
             }
         }
 
+        public void Dispose()
+        {
+            m_HttpListenerReset.Dispose();
+            m_CleanUpReset.Dispose();
+        }
     }
 }
