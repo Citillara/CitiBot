@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CitiBot.Main.Models
@@ -70,6 +71,14 @@ namespace CitiBot.Main.Models
             n.Save();
         }
 
+        public static void AddBusinessLog(DateTime date, LogLevel level, string criteria1, string criteria2, string data, params object[] arg)
+        {
+            AddBusinessLog(date, level, criteria1, criteria2, string.Format(Thread.CurrentThread.CurrentCulture, data, arg));
+        }
+
+        public void Say(string destination, string format)
+        {
+        }
 
         public enum LogTypes
         {

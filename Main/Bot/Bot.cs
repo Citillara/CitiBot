@@ -1,4 +1,5 @@
-﻿using CitiBot.Main.Models;
+﻿using CitiBot.Database;
+using CitiBot.Main.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace CitiBot.Main
         private ManualResetEvent m_CleanUpReset;
         private DateTime m_StartTime;
 
+        private List<string> m_ChannelList;
 
         private int m_ReconnectAttempts = 0;
         private const int MAX_RECONNECT_ATTEMPS = 15;
@@ -45,6 +47,7 @@ namespace CitiBot.Main
             m_PluginManager = new PluginManager(this);
             settings.Plugins.ToList().ForEach(p => m_PluginManager.AddPlugin(p.PluginName));
             m_PluginManager.LoadAllPlugins();
+            m_ChannelList = new List<string>();
         }
 
         public void Start()
@@ -55,9 +58,21 @@ namespace CitiBot.Main
                 m_HttpListenerThread.Start();
             }
 
-            m_TwitchClient = new TwitchClient(m_Name, m_Password);
+            string[] founders = Registry.Instance.TwitchUsers
+                .Where(x => x.IsAdmin == Plugins.Twitch.Models.TwitchUser.IsAdminFlags.Admin)
+                .Select(x => x.Name)
+                .ToArray();
+
+            string[] developers = Registry.Instance.TwitchUsers
+                .Where(x => x.IsAdmin == Plugins.Twitch.Models.TwitchUser.IsAdminFlags.Developer)
+                .Select(x => x.Name)
+                .ToArray();
+
+
+            m_TwitchClient = new TwitchClient(m_Name, m_Password, founders, developers);
             m_TwitchClient.OnDisconnect += m_TwitchClient_OnDisconnect;
             m_TwitchClient.OnJoin += m_TwitchClient_OnJoin;
+            m_TwitchClient.OnPart += M_TwitchClient_OnPart;
             m_TwitchClient.OnMessage += m_TwitchClient_OnMessage;
             m_TwitchClient.OnPerform += m_TwitchClient_OnPerform;
             m_TwitchClient.OnNotice += m_TwitchClient_OnNotice;
@@ -79,6 +94,7 @@ namespace CitiBot.Main
 
         void Stop()
         {
+            Console.WriteLine("Bot stopping" + m_BotId);
             m_HttpListenerThreadLoop = false;
             m_CleanUpThreadLoop = false;
             m_CleanUpReset.Set();
@@ -102,6 +118,7 @@ namespace CitiBot.Main
                 }
                 m_CleanUpReset.WaitOne(m_CleanUpLoopWait);
             }
+            Console.WriteLine("[" + DateTime.Now.ToString() + "] Closing CleanUpThread on port ");
         }
 
         void HttpListenerThread()
@@ -194,6 +211,13 @@ namespace CitiBot.Main
                         sb.AppendLine(s);
                     }
                 }
+                else if (request.Url.AbsoluteUri.EndsWith("channels"))
+                {
+                    foreach (string s in bot.m_ChannelList)
+                    {
+                        sb.AppendLine(s);
+                    }
+                }
                 else
                 {
                     noBody = true;
@@ -259,8 +283,20 @@ namespace CitiBot.Main
                     else
                         sender.SendMessage(args.Channel, "Joined");
                 }
+
+                if(!m_ChannelList.Contains(args.Channel))
+                    m_ChannelList.Add(args.Channel);
             }
         }
+
+        void M_TwitchClient_OnPart(TwitchClient sender, Twitch.Models.TwitchClientOnPartEventArgs args)
+        {
+            if(args.IsMyself && m_ChannelList.Contains(args.Channel))
+            {
+                m_ChannelList.Remove(args.Channel);
+            }
+        }
+
 
         void m_TwitchClient_OnDisconnect(TwitchClient sender, bool wasManualDisconnect)
         {
@@ -288,6 +324,7 @@ namespace CitiBot.Main
 
         public void Dispose()
         {
+            Console.WriteLine("[" + DateTime.Now.ToString() + "] Bot disposed");
             m_HttpListenerReset.Dispose();
             m_CleanUpReset.Dispose();
         }

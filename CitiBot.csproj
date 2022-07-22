@@ -114,6 +114,7 @@
     <Compile Include="Plugins\Moderation\Models\ModerationBlacklistItem.cs" />
     <Compile Include="Plugins\Moderation\Moderation.cs" />
     <Compile Include="Plugins\GenericCommands\GenericCommands.cs" />
+    <Compile Include="Plugins\Special\Special.cs" />
     <Compile Include="Plugins\Twitch\Models\TwitchUser.cs" />
     <Compile Include="Main\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -14,12 +14,13 @@ namespace CitiBot.Main
 {
     public class PluginManager
     {
-        private static Dictionary<string, Type> m_availablePlugins = new Dictionary<string, Type>()
-        { 
+        private static readonly Dictionary<string, Type> m_availablePlugins = new Dictionary<string, Type>()
+        {
             { "GenericCommands", typeof(CitiBot.Plugins.GenericCommands.GenericCommands) },
             { "CookieGiver", typeof(CitiBot.Plugins.CookieGiver.CookieGiver) },
             { "Counter", typeof(CitiBot.Plugins.Counters.CountersCommands) },
             { "Moderation", typeof(CitiBot.Plugins.Moderation.Moderation) },
+            { "Special", typeof(CitiBot.Plugins.Special.Special) },
         };
 
         private readonly Dictionary<string, OnMessageAction> m_commands;
@@ -27,7 +28,7 @@ namespace CitiBot.Main
         private readonly List<Plugin> m_plugins;
 
         private readonly int m_BotId;
-        
+
         private readonly StatsCounter m_NumberOfParsedMessages;
         private readonly StatsCounter m_NumberOfRunnedCommands;
 
@@ -92,13 +93,57 @@ namespace CitiBot.Main
         {
             try
             {
+                if (Registry.Instance != null)
+                    Registry.Instance.Close();
                 m_NumberOfParsedMessages.IncrementCounter();
 
-                m_plugins.ForEach(p => p.OnMessage(client, message));
-
-                if (message.BitsSent != 0)
+                try
                 {
-                    m_plugins.ForEach(p => p.OnBitsSent(client, message));
+                    m_plugins.ForEach(p => p.OnMessage(client, message));
+
+                    if (message.BitsSent != 0)
+                    {
+                        m_plugins.ForEach(p => p.OnBitsSent(client, message));
+                    }
+                    Registry.Instance.SaveChanges();
+                }
+                catch (System.IO.IOException)
+                {
+                    if (Registry.Instance != null)
+                        Registry.Instance.Close();
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Log.AddTechnicalLog(DateTime.Now, Log.LogLevel.Warn, this.m_BotId.ToString(), "PreCommand", message.ToString());
+                    if (Registry.Instance != null)
+                        Registry.Instance.Close();
+#if BREAK
+                    if (System.Diagnostics.Debugger.IsAttached)
+                        System.Diagnostics.Debugger.Break();
+#endif
+                    Console.Write("[");
+                    Console.Write(DateTime.Now.ToString());
+                    Console.Write("] ");
+                    Console.WriteLine("OnMessageAction.OnMessage exception");
+                    Console.WriteLine(message);
+                    Console.WriteLine();
+                    if (e is System.Data.Entity.Infrastructure.DbUpdateException)
+                    {
+                        Console.WriteLine("System.Data.Entity.Infrastructure.DbUpdateException");
+                        Console.WriteLine(e.Message);
+                    }
+                    else
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+                    Console.WriteLine();
+
+                }
+                if (Registry.Instance != null)
+                {
+                    Registry.Instance.SaveChanges();
+                    Registry.Instance.Close();
                 }
 
                 if (message.Message.StartsWith("!"))
@@ -114,7 +159,7 @@ namespace CitiBot.Main
                     }
                 }
             }
-            catch(Exception e)
+            catch (Exception e)
             {
 #if BREAK
                     if (System.Diagnostics.Debugger.IsAttached)
@@ -147,8 +192,9 @@ namespace CitiBot.Main
             public int UserCooldown { get; set; }
             public int UserChannelCooldown { get; set; }
             public int ChannelCooldown { get; set; }
+            public TwitchUserTypes? Bypass { get; set; }
 
-            private readonly Dictionary<string, DateTime> m_cooldowns = new Dictionary<string,DateTime>();
+            private readonly Dictionary<string, DateTime> m_cooldowns = new Dictionary<string, DateTime>();
 
             public OnMessageAction(Plugin plugin, Action<TwitchClient, TwitchMessage> action)
             {
@@ -172,18 +218,21 @@ namespace CitiBot.Main
 
             protected internal void OnMessage(TwitchClient client, TwitchMessage message)
             {
-                if (GlobalCooldown > 0)
-                    if (!CheckKey("######", GlobalCooldown))
-                        return;
-                if (UserCooldown > 0)
-                    if (!CheckKey(message.SenderName, UserCooldown))
-                        return;
-                if (ChannelCooldown > 0)
-                    if (!CheckKey(message.Channel, ChannelCooldown))
-                        return;
-                if (UserChannelCooldown > 0)
-                    if (!CheckKey(message.Channel + message.SenderName, UserChannelCooldown))
-                        return;
+                if (!Bypass.HasValue || Bypass > message.UserType)
+                {
+                    if (GlobalCooldown > 0)
+                        if (!CheckKey("######", GlobalCooldown))
+                            return;
+                    if (UserCooldown > 0)
+                        if (!CheckKey(message.SenderName, UserCooldown))
+                            return;
+                    if (ChannelCooldown > 0)
+                        if (!CheckKey(message.Channel, ChannelCooldown))
+                            return;
+                    if (UserChannelCooldown > 0)
+                        if (!CheckKey(message.Channel + message.SenderName, UserChannelCooldown))
+                            return;
+                }
 
                 if (Registry.Instance != null)
                     Registry.Instance.Close();

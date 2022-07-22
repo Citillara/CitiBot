@@ -55,15 +55,15 @@ namespace CitiBot.Plugins.GenericCommands
                 new PluginManager.OnMessageAction(this, DoLearnUser, "!learn"));
 
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoBonk, "!bonk", "boink") { ChannelCooldown = 5 });
+                new PluginManager.OnMessageAction(this, DoBonk, "!bonk", "!boink") { UserChannelCooldown = 5, Bypass = TwitchUserTypes.Founder });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoSetAutoJoin, "!setautojoin"));
 
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoCelciusToFahrenheit, "!ctof", "!getf") { UserCooldown = 10 });
+                new PluginManager.OnMessageAction(this, DoCelciusToFahrenheit, "!ctof", "!getf") { UserCooldown = 3 });
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoFahrenheitToCelcius, "!ftoc", "!getc") { UserCooldown = 10 });
+                new PluginManager.OnMessageAction(this, DoFahrenheitToCelcius, "!ftoc", "!getc") { UserCooldown = 3 });
 
         }
 
@@ -73,15 +73,18 @@ namespace CitiBot.Plugins.GenericCommands
         }
         public void DoBonk(TwitchClient sender, TwitchMessage message)
         {
-            if(message.Args.Count() > 1)
+            if (message.Args.Count() > 1)
             {
-                if(message.Args[1].ToLowerInvariant() == "citibot")
+                string bonkType = "bonks";
+                if (message.Args[0] == "!boink")
+                    bonkType = "boinks";
+                if (message.Args[1].ToLowerInvariant() == "citibot")
                 {
-                    sender.SendAction(message.Channel, "selfbonks citiBoink2");
+                    sender.SendAction(message.Channel, $"self{bonkType} citiBoink2");
                 }
                 else
                 {
-                    sender.SendAction(message.Channel, "boinks " + message.Args[1] + " citiBoink2");
+                    sender.SendAction(message.Channel, bonkType + " " + message.Args[1] + " citiBoink2");
                 }
             }
             else
@@ -113,7 +116,9 @@ namespace CitiBot.Plugins.GenericCommands
                 else
                 {
                     sender.Join("#" + message.SenderName);
-                    sender.SendMessage("#citillara", "Joining {0} on behalf of {1}", "#" + message.SenderName, message.SenderDisplayName);
+
+                    Log.AddBusinessLog(DateTime.Now, Log.LogLevel.Info,
+                        message.Channel, "Join", "Joining {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
                 }
             }
         }
@@ -126,7 +131,11 @@ namespace CitiBot.Plugins.GenericCommands
             else
             {
                 sender.Part(message.Channel);
-                sender.SendMessage("#citillara", "Parting {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
+                var channel = BotSettings.GetById(m_botId).GetChannel(message.Channel);
+                channel.AutoJoin = BotChannel.AutoJoinSettings.No;
+                channel.Save();
+                Log.AddBusinessLog(DateTime.Now, Log.LogLevel.Info,
+                    message.Channel, "Part", "Parting {0} on behalf of {1}", message.Channel, message.SenderDisplayName);
             }
         }
         public void DoPyramid(TwitchClient sender, TwitchMessage message)
@@ -170,7 +179,7 @@ namespace CitiBot.Plugins.GenericCommands
                 }
             }
         }
-        public void DoRoll(TwitchClient sender, TwitchMessage message)  
+        public void DoRoll(TwitchClient sender, TwitchMessage message)
         {
             int roll = 0;
 
@@ -385,7 +394,7 @@ namespace CitiBot.Plugins.GenericCommands
                         sender.SendMessage(message.Channel, "{0:0.0} °C", c);
                     }
                 }
-                catch 
+                catch
                 {
                     // Do nothing
                 }

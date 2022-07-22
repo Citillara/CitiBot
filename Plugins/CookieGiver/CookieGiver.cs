@@ -19,7 +19,7 @@ namespace CitiBot.Plugins.CookieGiver
     public class CookieGiver : Plugin
     {
         private const int CAL_PER_COOKIE = 31;
-        
+
         public CookieGiver()
         {
             Load();
@@ -313,6 +313,40 @@ namespace CitiBot.Plugins.CookieGiver
             {
                 string greetings = channel.SubGreetings.Replace("$user", notice.DisplayName);
                 client.SendMessage(notice.Channel, greetings);
+            }
+        }
+
+
+        public void DoUltraBonk(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.Args.Count() > 1)
+            {
+                if (message.UserType < TwitchUserTypes.Founder)
+                {
+                    var sender_user_database = CookieUser.GetUser(message.Channel, message.SenderName, message.UserId, message.SenderDisplayName);
+                    if (sender_user_database != null && sender_user_database.CookieReceived >= 100)
+                    {
+                        sender_user_database.CookieReceived -= 100;
+                        sender_user_database.Save();
+                    }
+                    else
+                    {
+                        sender.SendMessage(message.Channel, 
+                            $"Sorry {message.SenderDisplayName} but you need at least 100 cookies to use the ultraboink. (You have {sender_user_database.CookieReceived})");
+                    }
+                }
+
+                string bonkType = "ultrabonks";
+                if (message.Args[0] == "!ultraboink")
+                    bonkType = "ultraboinks";
+                if (message.Args[1].ToLowerInvariant() == "citibot")
+                {
+                    sender.SendAction(message.Channel, $"{bonkType} {message.SenderDisplayName} citiBoink2");
+                }
+                else
+                {
+                    sender.SendAction(message.Channel, bonkType + " " + message.Args[1] + " citiBoink2");
+                }
             }
         }
 
@@ -764,7 +798,7 @@ namespace CitiBot.Plugins.CookieGiver
                 case "!setcustomcookie":
                     channelp.CustomCookieEmote = sub;
                     client.SendMessage(message.Channel, "Custom cookie emote has been set to : " + sub);
-                    Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CustomCookieEmote", 
+                    Log.AddBusinessLog(DateTime.Now, Main.Models.Log.LogLevel.Info, message.Channel, "CustomCookieEmote",
                         $"{message.SenderName} has set custom cookie emote to : {sub}");
                     break;
                 default: break;
@@ -882,7 +916,7 @@ namespace CitiBot.Plugins.CookieGiver
                 if (words != "")
                     words += "and ";
 
-                var unitsMap = new[] { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", 
+                var unitsMap = new[] { "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
                     "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen" };
                 var tensMap = new[] { "zero", "ten", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety" };
 
