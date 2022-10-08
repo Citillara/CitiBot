@@ -24,18 +24,19 @@ namespace CitiBot.Plugins.Special
 
         public override void OnMessage(TwitchClient sender, TwitchMessage message)
         {
-            if (message.Channel != "#kaguyanicky")
-                return;
-            if (message.SenderName == "citillara")
+            if (message.Channel == "#kaguyanicky")
             {
-                lastCitiMessagge = message.TwitchTimestamp;
-            }
-            else if (message.SenderName == "buttsbot")
-            {
-                long diff = message.TwitchTimestamp - lastCitiMessagge;
-                if( diff > 0 && diff < 2000)
+                if (message.SenderName == "citillara")
                 {
-                    sender.SendAction(message.Channel, "boinks buttsbot very hard! citiBoink2 citiBoink2 citiBoink2 citiBoink2");
+                    lastCitiMessagge = message.TwitchTimestamp;
+                }
+                else if (message.SenderName == "buttsbot")
+                {
+                    long diff = message.TwitchTimestamp - lastCitiMessagge;
+                    if (diff > 0 && diff < 2000)
+                    {
+                        sender.SendAction(message.Channel, "boinks buttsbot very hard! citiBoink2 citiBoink2 citiBoink2 citiBoink2");
+                    }
                 }
             }
         }

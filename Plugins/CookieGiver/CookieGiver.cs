@@ -90,6 +90,13 @@ namespace CitiBot.Plugins.CookieGiver
                     )
                 { UserChannelCooldown = 5 });
 
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoUltraBonk,
+                    "!ultrabonk",
+                    "!ultraboink"
+                    )
+                { UserChannelCooldown = 5 });
+
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, ChangeStringSettings,
@@ -146,8 +153,13 @@ namespace CitiBot.Plugins.CookieGiver
              { ChannelCooldown = 10 });
         }
 
+        readonly string[] ENABLE_COOKIE_COMMANDS = { "!enablecookies", "!enablecookie", "!cookiesenable", "!cookieenable" };
+
         public override bool BeforeCommand(TwitchClient sender, TwitchMessage message)
         {
+            if (ENABLE_COOKIE_COMMANDS.Contains(message.Args[0].ToLowerInvariant()))
+                return true;
+                
             return CookieChannel.GetChannel(message.Channel).Status == CookieChannel.CookieChannelStates.Enabled;
         }
 
@@ -319,6 +331,8 @@ namespace CitiBot.Plugins.CookieGiver
 
         public void DoUltraBonk(TwitchClient sender, TwitchMessage message)
         {
+            if (message.IsWhisper)
+                return;
             if (message.Args.Count() > 1)
             {
                 if (message.UserType < TwitchUserTypes.Founder)

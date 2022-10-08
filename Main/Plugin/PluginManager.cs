@@ -149,7 +149,7 @@ namespace CitiBot.Main
                 if (message.Message.StartsWith("!"))
                 {
                     var split = message.Message.Split(' ');
-                    string msg = split[0];
+                    string msg = split[0].ToLowerInvariant();
 
                     OnMessageAction action;
                     if (m_commands.TryGetValue(msg, out action))
