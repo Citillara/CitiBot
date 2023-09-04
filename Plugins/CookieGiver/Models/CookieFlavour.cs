@@ -35,6 +35,14 @@ namespace CitiBot.Plugins.CookieGiver.Models
             return Registry.Instance.CookieFlavours.Where(c => c.Channel == channel && c.Status == CookieFlavourState.Active).Select(c => c.Id);
         }
 
+        public static IEnumerable<Int32> SearchChannelFlavour(string channel, string text)
+        {
+            return Registry.Instance.CookieFlavours.Where(c => 
+            c.Channel == channel 
+            && c.Status == CookieFlavourState.Active 
+            && c.Text.ToLowerInvariant().Contains(text.ToLowerInvariant())).Select(c => c.Id);
+        }
+
         public static IEnumerable<Int32> GetCommonCookies()
         {
             return Registry.Instance.CookieFlavours.Where(c => c.Channel == "all" && c.Status == CookieFlavourState.Active).Select(c => c.Id);

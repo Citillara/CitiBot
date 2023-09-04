@@ -24,14 +24,17 @@ namespace CitiBot.Plugins.Twitch.Models
         public virtual string Name { get; set; }
         public virtual string DisplayName { get; set; }
         public virtual long? FFZId { get; set; }
-        public virtual long? TwitchIconId { get; set; }
-        public virtual string ApiToken { get; set; }
+        public virtual string TwitchIconId { get; set; }
         public virtual IsAdminFlags IsAdmin { get; set; }
-        public virtual DateTime? ApiTokenGenerationDate { get; set; }
+        public virtual string RefreshToken { get; set; }
+        public virtual DateTime? RefreshTokenGenerationDate { get; set; }
+        public virtual string AccessToken { get; set; }
+        public virtual DateTime? AccessTokenGenerationDate { get; set; }
+        public virtual string ApiKey { get; set; }
 
         public enum IsAdminFlags
         {
-            None=0, Developer = 8, Admin = 9
+            None=0, Admin = 8, MainAdmin = 9
         }
 
         public virtual ICollection<CookieUser> CookieUsers { get; set; }

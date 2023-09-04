@@ -33,6 +33,7 @@ namespace CitiBot.Database
         public DbSet<GlobalSetting> GlobalSettings { get; set; }
 
         public DbSet<ModerationBlacklistItem> ModerationBlacklistItems { get; set; }
+        //public DbSet<ModerationChannelSetting> ModerationChannelSettings { get; set; }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {

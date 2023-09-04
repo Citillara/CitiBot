@@ -59,12 +59,12 @@ namespace CitiBot.Main
             }
 
             string[] founders = Registry.Instance.TwitchUsers
-                .Where(x => x.IsAdmin == Plugins.Twitch.Models.TwitchUser.IsAdminFlags.Admin)
+                .Where(x => x.IsAdmin == Plugins.Twitch.Models.TwitchUser.IsAdminFlags.MainAdmin)
                 .Select(x => x.Name)
                 .ToArray();
 
             string[] developers = Registry.Instance.TwitchUsers
-                .Where(x => x.IsAdmin == Plugins.Twitch.Models.TwitchUser.IsAdminFlags.Developer)
+                .Where(x => x.IsAdmin == Plugins.Twitch.Models.TwitchUser.IsAdminFlags.Admin)
                 .Select(x => x.Name)
                 .ToArray();
 

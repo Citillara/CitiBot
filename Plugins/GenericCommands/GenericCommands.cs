@@ -1,4 +1,5 @@
-﻿using CitiBot.Main;
+﻿using CitiBot.Helpers;
+using CitiBot.Main;
 using CitiBot.Main.Models;
 using CitiBot.Plugins.Twitch.Models;
 using System;
@@ -16,10 +17,24 @@ namespace CitiBot.Plugins.GenericCommands
     public class GenericCommands : Plugin
     {
         private readonly string TWITCH_URL = "https://twitch.tv/";
-        private readonly int RAID_REPEAT = 4;
+        private readonly int RAID_REPEAT = 1;
         private Dictionary<string, string> m_raidMessages = new Dictionary<string, string>();
         private readonly DateTime m_startTime = DateTime.Now;
         private int m_botId;
+
+
+        private string m_botUsername;
+        private string BotUsername
+        {
+            get
+            {
+                if (m_botUsername == null)
+                {
+                    m_botUsername = BotSettings.GetById(this.Manager.BotId).Name;
+                }
+                return m_botUsername;
+            }
+        }
 
         public override void OnLoad(PluginManager pluginManager)
         {
@@ -43,7 +58,7 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoTimeDiff, "!timediff", "!timedif") { ChannelCooldown = 5 });
             pluginManager.RegisterCommand(
-                new PluginManager.OnMessageAction(this, DoUptime, "!uptime") { ChannelCooldown = 5 });
+                new PluginManager.OnMessageAction(this, DoUptime, "!botuptime") { ChannelCooldown = 5 });
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoToAlBhed, "!toal", "!toalbhed", "!toalbed", "!toalbehd") { UserCooldown = 30 });
@@ -126,7 +141,7 @@ namespace CitiBot.Plugins.GenericCommands
         {
             if (message.UserType < TwitchUserTypes.Broadcaster)
             {
-                sender.SendWhisper(message.SenderName, "Sorry {0}, but this command is rectricted to Broadcaster and above", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but this command is rectricted to Broadcaster and above", message.SenderDisplayName);
             }
             else
             {
@@ -271,7 +286,7 @@ namespace CitiBot.Plugins.GenericCommands
                     case "twitch":
                         if (success)
                         {
-                            user.TwitchIconId = val;
+                            user.TwitchIconId = message.Args[4];
                             user.FFZId = null;
                         }
                         break;
@@ -296,14 +311,14 @@ namespace CitiBot.Plugins.GenericCommands
         {
             if (!message.IsWhisper)
                 return;
-            sender.SendWhisper(message.Channel, Substitute(message.Message, ALPHABET, ALBHED));
+            ApiHelper.CallWhisperApi(BotUsername, message.UserId, Substitute(message.Message, ALPHABET, ALBHED));
         }
 
         private void DoToFromBhed(TwitchClient sender, TwitchMessage message)
         {
             if (!message.IsWhisper)
                 return;
-            sender.SendWhisper(message.Channel, Substitute(message.Message, ALBHED, ALPHABET));
+            ApiHelper.CallWhisperApi(BotUsername, message.UserId, Substitute(message.Message, ALBHED, ALPHABET));
         }
 
         private string Substitute(string text, string referenceFrom, string referenceTo)

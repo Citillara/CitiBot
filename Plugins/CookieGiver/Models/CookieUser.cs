@@ -78,6 +78,8 @@ namespace CitiBot.Plugins.CookieGiver.Models
         public static CookieUser GetUser(string channel, string username, long? twitchId = null, string displayName = null)
         {
             CookieUser val = null;
+
+            string cleanedDisplayName = displayName?.Replace("@", "");
             if (twitchId != null)
             {
                 val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.TwitchId == twitchId);
@@ -86,18 +88,18 @@ namespace CitiBot.Plugins.CookieGiver.Models
             {
                 val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.Name == username);
             }
-            if (val == null && displayName != null)
+            if (val == null && cleanedDisplayName != null)
             {
-                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.DisplayName == displayName);
+                val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.DisplayName == cleanedDisplayName);
             }
-            if (val == null && displayName != null)
+            if (val == null && cleanedDisplayName != null)
             {
-                string lower = displayName.ToLowerInvariant();
+                string lower = cleanedDisplayName.ToLowerInvariant();
                 val = FirstOrDefaultLocal("TwitchUser", c => c.Channel == channel && c.TwitchUser.Name == lower);
             }
             if (val == null)
             {
-                val = New(channel, username, twitchId, displayName);
+                val = New(channel, username, twitchId, cleanedDisplayName);
             }
             return val;
         }

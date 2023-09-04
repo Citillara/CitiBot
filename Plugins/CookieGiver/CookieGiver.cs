@@ -1,4 +1,5 @@
-﻿using CitiBot.Main;
+﻿using CitiBot.Helpers;
+using CitiBot.Main;
 using CitiBot.Main.Models;
 using CitiBot.Plugins.CookieGiver.Models;
 using CitiBot.Plugins.Twitch.Models;
@@ -19,6 +20,20 @@ namespace CitiBot.Plugins.CookieGiver
     public class CookieGiver : Plugin
     {
         private const int CAL_PER_COOKIE = 31;
+
+
+        private string m_botUsername;
+        private string BotUsername
+        {
+            get
+            {
+                if (m_botUsername == null)
+                {
+                    m_botUsername = BotSettings.GetById(this.Manager.BotId).Name;
+                }
+                return m_botUsername;
+            }
+        }
 
         public CookieGiver()
         {
@@ -50,7 +65,7 @@ namespace CitiBot.Plugins.CookieGiver
                     "!cookierank",
                     "!cookiecount"
                     )
-                { UserCooldown = 30 });
+                { UserCooldown = 30 , Bypass = TwitchUserTypes.Founder});
 
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DisplayCookieCountLink,
@@ -151,6 +166,12 @@ namespace CitiBot.Plugins.CookieGiver
                  "!resetcustomcookie"
                  )
              { ChannelCooldown = 10 });
+
+            pluginManager.RegisterCommand(
+             new PluginManager.OnMessageAction(this, DoSearchCookieFlavour,
+                 "!findcookieflavour",
+                 "!findcookieflavor"
+                 ));
         }
 
         readonly string[] ENABLE_COOKIE_COMMANDS = { "!enablecookies", "!enablecookie", "!cookiesenable", "!cookieenable" };
@@ -159,7 +180,7 @@ namespace CitiBot.Plugins.CookieGiver
         {
             if (ENABLE_COOKIE_COMMANDS.Contains(message.Args[0].ToLowerInvariant()))
                 return true;
-                
+
             return CookieChannel.GetChannel(message.Channel).Status == CookieChannel.CookieChannelStates.Enabled;
         }
 
@@ -175,12 +196,12 @@ namespace CitiBot.Plugins.CookieGiver
         {
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
             if (message.UserType < TwitchUserTypes.Mod)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
                 return;
             }
 
@@ -188,26 +209,26 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (msg.IndexOf(' ') == -1)
             {
-                client.SendWhisper(message.SenderName, "Please specify what you want to add to the cookie database");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Please specify what you want to add to the cookie database");
                 return;
             }
 
             string sub = msg.Substring(msg.IndexOf(' ')).Trim();
             if (!sub.ToLowerInvariant().Contains("cookie"))
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but the new flavor must contain the word \"cookie\" (singular)", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but the new flavor must contain the word \"cookie\" (singular)", message.SenderDisplayName);
                 return;
             }
             if (!CheckAllowedCookie(sub))
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you're not allowed to add this.", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you're not allowed to add this.", message.SenderDisplayName);
                 return;
             }
 
             CookieFlavour.AddNewCookieFlavor(message.Channel, sub, message.SenderName);
 
 
-            client.SendMessage(message.Channel, "\"{0}\" have been added to the cookie database", sub);
+            client.SendMessage(message.Channel, "\"{0}\" has been added to the cookie database", sub);
 
 
         }
@@ -251,7 +272,7 @@ namespace CitiBot.Plugins.CookieGiver
                 var number_of_users = CookieUser.GetChannelUserCount(channel);
 
                 int cookies = user.CookieReceived;
-                client.SendWhisper(message.SenderName, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "{0}, you received {1} cookies so far which places you {2} out of {3}. It represents {4} which you can burn by doing {5}",
                     message.SenderDisplayName,
                     user.CookieReceived,
                     Ranking(ranking),
@@ -279,7 +300,7 @@ namespace CitiBot.Plugins.CookieGiver
         {
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry but that command is not supported over whisper");
                 return;
             }
             client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/c/{0}/cookies", message.Channel.ToLowerInvariant().Replace("#", ""));
@@ -288,7 +309,7 @@ namespace CitiBot.Plugins.CookieGiver
         {
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry but that command is not supported over whisper");
                 return;
             }
             client.SendMessage(message.Channel, "https://www.citillara.fr/citibot/c/{0}/cookies/flavours", message.Channel.ToLowerInvariant().Replace("#", ""));
@@ -328,6 +349,19 @@ namespace CitiBot.Plugins.CookieGiver
             }
         }
 
+        public void DoSearchCookieFlavour(TwitchClient sender, TwitchMessage message)
+        {
+            if (message.IsWhisper)
+                return;
+            if (message.UserType < TwitchUserTypes.Developer)
+                return;
+
+            string searchstring = message.Message;
+
+            int? id = CookieFlavour.SearchChannelFlavour(message.Channel, searchstring).FirstOrDefault();
+            if (id.HasValue)
+                sender.SendMessage(message.Channel, "id:" + id);
+        }
 
         public void DoUltraBonk(TwitchClient sender, TwitchMessage message)
         {
@@ -345,7 +379,7 @@ namespace CitiBot.Plugins.CookieGiver
                     }
                     else
                     {
-                        sender.SendMessage(message.Channel, 
+                        sender.SendMessage(message.Channel,
                             $"Sorry {message.SenderDisplayName} but you need at least 100 cookies to use the ultraboink. (You have {sender_user_database.CookieReceived})");
                     }
                 }
@@ -371,14 +405,20 @@ namespace CitiBot.Plugins.CookieGiver
             bool allowedThroughWhisper = false;
             string target = message.SenderDisplayName;
             string channel = message.Channel;
-            string[] split = message.Message.Split(' ');
-            if (split.Length > 1)
+            List<string> split = message.Message.Split(' ').ToList();
+            string forcedFlavour = split[0];
+            if (message.UserType >= TwitchUserTypes.Developer && message.Message.Contains("fid:"))
+            {
+                forcedFlavour = split.Find(s => s.Contains("fid:"));
+                split.Remove(forcedFlavour);
+            }
+            if (split.Count > 1)
             {
                 // Sends the cookie to someone else. Usage : !cookie <target>
                 target = split[1].Trim().Replace("@", "");
                 targetIsNotSender = true;
             }
-            if (split.Length > 2)
+            if (split.Count > 2)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel>
                 if (message.UserType >= TwitchUserTypes.Developer && split[2].StartsWith("#"))
@@ -392,7 +432,7 @@ namespace CitiBot.Plugins.CookieGiver
                     allowedThroughWhisper = false;
                 }
             }
-            if (split.Length == 4 && message.UserType >= TwitchUserTypes.Founder)
+            if (split.Count == 4 && message.UserType >= TwitchUserTypes.Founder)
             {
                 // Sends the cookies on another channel. Usage : !cookie <target> <channel> <amount>
                 int.TryParse(split[3], out forcedCookies);
@@ -401,7 +441,7 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (message.IsWhisper && !allowedThroughWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry but that command is not supported over whisper");
                 return;
             }
 
@@ -434,7 +474,7 @@ namespace CitiBot.Plugins.CookieGiver
                     if (next_allowance_date > DateTime.Now)
                     {
                         var next_allowance_seconds = (int)(next_allowance_date - DateTime.Now).TotalSeconds;
-                        client.SendWhisper(message.SenderName,
+                        ApiHelper.CallWhisperApi(BotUsername, message.UserId,
                             "Sorry {0} but you can get/send cookies only every {1} seconds (next in {2} seconds)",
                             message.SenderDisplayName, delay_in_seconds, next_allowance_seconds);
                         return; // Prevent him from sending
@@ -445,11 +485,11 @@ namespace CitiBot.Plugins.CookieGiver
 
             var target_user_database = CookieUser.GetUser(channel, targetDatabaseKey);
 
-            GiveCookies(client, channel, sender_user_database, target_user_database, forcedCookies, split[0]);
+            GiveCookies(client, channel, sender_user_database, target_user_database, forcedCookies, forcedFlavour);
         }
 
         private void GiveCookies(TwitchClient client, string channel, CookieUser sender, CookieUser target,
-            int forcedCookies = -1, string forcedFlavour = "")
+            int forcedCookies, string forcedFlavour = "")
         {
             // Set the last sent
             if (sender.Id == target.Id)
@@ -527,11 +567,22 @@ namespace CitiBot.Plugins.CookieGiver
                 flavor = "morning cookie";
             else if (forcedFlavour.Contains("eveningcookie"))
                 flavor = "evening cookie";
+            else if (forcedFlavour.StartsWith("fid:"))
+            {
+                int id = -1;
+                int.TryParse(forcedFlavour.Substring(4), out id);
+                if(id > 0)
+                    flavor = CookieFlavour.GetCookie(id).Text.ToLowerInvariant();
+            }
 
             string msg;
-            if (flavor.Contains("[number]") && flavor.Contains("[target]"))
+            if ((flavor.Contains("[number]") || flavor.Contains("[amount]"))
+                && flavor.Contains("[target]"))
             {
-                msg = flavor.Replace("[number]", NumberToWords(quantity)).Replace("[target]", target.TwitchUser.BusinessDisplayName) + modifier;
+                msg = flavor
+                    .Replace("[number]", NumberToWords(quantity))
+                    .Replace("[amount]", NumberToWords(quantity))
+                    .Replace("[target]", target.TwitchUser.BusinessDisplayName) + modifier;
             }
             else
             {
@@ -558,13 +609,13 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (sender == null || sender.CookieReceived < amount)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you don't have enough cookies", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you don't have enough cookies", message.SenderDisplayName);
                 return;
             }
 
             if (sender.Id == target.Id)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you can't send cookies to yourself, use !cookie instead", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you can't send cookies to yourself, use !cookie instead", message.SenderDisplayName);
                 return;
             }
 
@@ -585,7 +636,7 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry but that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry but that command is not supported over whisper");
             }
             if (message.Args.Length < 3)
             {
@@ -594,17 +645,17 @@ namespace CitiBot.Plugins.CookieGiver
             }
             if (!int.TryParse(message.Args[2], out bribe_amount) || bribe_amount <= 0)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you must specify a non negative number of cookies", message.SenderDisplayName);
                 return;
             }
             if (briber == null)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you don't have any cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
             if (bribe_amount > briber.CookieReceived)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you don't have enough cookies to bribe Yoshi with", message.SenderDisplayName);
                 return;
             }
             var channel = CookieChannel.GetChannel(message.Channel);
@@ -612,7 +663,7 @@ namespace CitiBot.Plugins.CookieGiver
             if (nextbribe > DateTime.Now)
             {
                 var sec = (int)(nextbribe - DateTime.Now).TotalSeconds;
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you can only bribe Yoshi every {1} seconds (next attempt in {2} seconds)", message.SenderDisplayName, channel.BribeDelay, sec);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you can only bribe Yoshi every {1} seconds (next attempt in {2} seconds)", message.SenderDisplayName, channel.BribeDelay, sec);
                 return;
             }
 
@@ -620,7 +671,7 @@ namespace CitiBot.Plugins.CookieGiver
 
             if (target == null || target.CookieReceived <= 0)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but {1} doesn't have any cookies", message.SenderDisplayName, message.Args[1]);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but {1} doesn't have any cookies", message.SenderDisplayName, message.Args[1]);
                 return;
             }
 
@@ -635,6 +686,10 @@ namespace CitiBot.Plugins.CookieGiver
 
                 briber.CookieReceived -= bribe_amount;
                 briber.CookieReceived -= quantity;
+                if(briber.CookieReceived < 0)
+                {
+                    briber.CookieReceived = 0;
+                }
                 briber.CookiesGivenToYoshi += bribe_amount;
                 briber.CookiesDestroyedByYoshi += quantity;
                 briber.CookiesLostToYoshi += quantity;
@@ -705,7 +760,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
         private void DisableCookies(TwitchClient client, TwitchMessage message)
@@ -721,7 +776,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
 
@@ -772,20 +827,20 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
         private void ChangeStringSettings(TwitchClient client, TwitchMessage message)
         {
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
 
             if (message.UserType < TwitchUserTypes.Broadcaster)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, this command is only for the broadcaster.", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for the broadcaster.", message.SenderDisplayName);
                 return;
             }
 
@@ -823,7 +878,7 @@ namespace CitiBot.Plugins.CookieGiver
         {
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
             if (message.UserType >= TwitchUserTypes.Broadcaster)
@@ -838,7 +893,7 @@ namespace CitiBot.Plugins.CookieGiver
         {
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
 
@@ -872,7 +927,7 @@ namespace CitiBot.Plugins.CookieGiver
             }
             else
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but you are not the broadcaster", message.SenderDisplayName);
             }
         }
 

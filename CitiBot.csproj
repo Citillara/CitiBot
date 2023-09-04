@@ -89,6 +89,7 @@
   <ItemGroup>
     <Compile Include="Database\BaseModel.cs" />
     <Compile Include="Database\Registry.DatabaseMappings.cs" />
+    <Compile Include="Helpers\ApiHelper.cs" />
     <Compile Include="Main\Bot\Bot.cs" />
     <Compile Include="Main\Bot\BotManager.cs" />
     <Compile Include="Main\Bot\Models\BotChannel.cs" />
@@ -111,6 +112,7 @@
     <Compile Include="Plugins\CookieGiver\Models\CookieUser.cs" />
     <Compile Include="Plugins\Counters\CountersCommands.cs" />
     <Compile Include="Plugins\Counters\Models\Counter.cs" />
+    <Compile Include="Plugins\Moderation\Models\ModerationChannelSetting.cs" />
     <Compile Include="Plugins\Moderation\Models\ModerationBlacklistItem.cs" />
     <Compile Include="Plugins\Moderation\Moderation.cs" />
     <Compile Include="Plugins\GenericCommands\GenericCommands.cs" />

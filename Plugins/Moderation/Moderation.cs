@@ -1,11 +1,16 @@
-﻿using CitiBot.Main;
+﻿using CitiBot.Helpers;
+using CitiBot.Main;
 using CitiBot.Main.Models;
 using CitiBot.Plugins.Moderation.Models;
+using CitiBot.Plugins.Twitch.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Twitch;
@@ -17,6 +22,19 @@ namespace CitiBot.Plugins.Moderation
     {
         private readonly List<string> m_all_blacklistitems = new List<string>();
         private readonly Dictionary<string, List<string>> m_channel_blacklist = new Dictionary<string, List<string>>();
+
+        private string m_botUsername;
+        private string BotUsername
+        {
+            get
+            {
+                if (m_botUsername == null)
+                {
+                    m_botUsername = BotSettings.GetById(this.Manager.BotId).Name;
+                }
+                return m_botUsername;
+            }
+        }
 
         public override void OnLoad(PluginManager pluginManager)
         {
@@ -45,7 +63,7 @@ namespace CitiBot.Plugins.Moderation
                 )
             )
             {
-                sender.SendBan(message.Channel, message.SenderName, "Blacklisted words");
+                ApiHelper.CallBanApi(BotUsername, message.Channel.Replace("#", ""), message.UserId, "Blacklisted words");
                 Counters.Models.Counter.Increment(message.Channel, message.Channel + "-ban");
                 sender.SendAction(message.Channel, "bonks {0} to oblivion citiBoink2 citiBoink2", message.SenderDisplayName);
                 Log.AddBusinessLog(DateTime.Now, Log.LogLevel.Info, message.Channel, "Ban", $"{message.SenderName} was banned from {message.Channel}. Trigger : {mess}");
@@ -74,7 +92,7 @@ namespace CitiBot.Plugins.Moderation
             }
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
             RehashAll();
@@ -122,7 +140,7 @@ namespace CitiBot.Plugins.Moderation
         {
             if (message.UserType < TwitchUserTypes.Developer)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, this command is only for Developer and above.", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for Developer and above.", message.SenderDisplayName);
                 return;
             }
 
@@ -130,7 +148,7 @@ namespace CitiBot.Plugins.Moderation
 
             if (msg.IndexOf(' ') == -1)
             {
-                client.SendWhisper(message.SenderName, "Please specify what you want to add to the moderation database");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Please specify what you want to add to the moderation database");
                 return;
             }
 
@@ -147,12 +165,12 @@ namespace CitiBot.Plugins.Moderation
         {
             if (message.UserType < TwitchUserTypes.Mod)
             {
-                client.SendWhisper(message.SenderName, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
                 return;
             }
             if (message.IsWhisper)
             {
-                client.SendWhisper(message.Channel, "Sorry by that command is not supported over whisper");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
 
@@ -160,7 +178,7 @@ namespace CitiBot.Plugins.Moderation
 
             if (msg.IndexOf(' ') == -1)
             {
-                client.SendWhisper(message.SenderName, "Please specify what you want to add to the moderation database");
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Please specify what you want to add to the moderation database");
                 return;
             }
 
@@ -171,6 +189,37 @@ namespace CitiBot.Plugins.Moderation
 
             client.SendMessage(message.Channel, "\"{0}\" have been added to the moderation database", sub);
             Rehash(message.Channel);
+        }
+        public void EnableLanguageBan(TwitchClient client, TwitchMessage message)
+        {
+            if (message.UserType < TwitchUserTypes.Mod)
+            {
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
+                return;
+            }
+            if (message.IsWhisper)
+            {
+                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
+                return;
+            }
+
+
+            string msg = message.Message.Replace("\"", "").Trim();
+            switch (msg)
+            {
+                case "cyrillic":
+                    break;
+                default: break;
+            }
+
+            Rehash(message.Channel);
+        }
+
+        static readonly Regex cyrillicRegex = new Regex("[\u0400-\u04FF]{4,}", RegexOptions.Compiled);
+
+        public static bool ContainsCyrillic(string text)
+        {
+            return cyrillicRegex.IsMatch(text);
         }
     }
 }
