@@ -18,7 +18,7 @@ namespace CitiBot.Helpers
         public static void CallBanApi(string botUsername, string broadcaster, long targetUserId, string reason, int duration = 0)
         {
 
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://www.citillara.fr/citibot/api/moderation/ban");
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://citillara.fr/citibot/api/moderation/ban");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 request.ServerCertificateValidationCallback += CheckCertificate;
@@ -79,7 +79,7 @@ namespace CitiBot.Helpers
         public static void CallWhisperApi(string botUsername, long targetUserId, string message)
         {
 
-            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://www.citillara.fr/citibot/api/whisper");
+            HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create("https://citillara.fr/citibot/api/whisper");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 request.ServerCertificateValidationCallback += CheckCertificate;

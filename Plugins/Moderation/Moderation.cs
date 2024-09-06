@@ -92,7 +92,7 @@ namespace CitiBot.Plugins.Moderation
             }
             if (message.IsWhisper)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
+                //ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
             RehashAll();
@@ -140,7 +140,7 @@ namespace CitiBot.Plugins.Moderation
         {
             if (message.UserType < TwitchUserTypes.Developer)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for Developer and above.", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, this command is only for Developer and above.", message.SenderDisplayName);
                 return;
             }
 
@@ -148,7 +148,7 @@ namespace CitiBot.Plugins.Moderation
 
             if (msg.IndexOf(' ') == -1)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Please specify what you want to add to the moderation database");
+                client.SendMessage(message.Channel, "Please specify what you want to add to the moderation database");
                 return;
             }
 
@@ -165,12 +165,12 @@ namespace CitiBot.Plugins.Moderation
         {
             if (message.UserType < TwitchUserTypes.Mod)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
                 return;
             }
             if (message.IsWhisper)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
+                //ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
 
@@ -178,7 +178,7 @@ namespace CitiBot.Plugins.Moderation
 
             if (msg.IndexOf(' ') == -1)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Please specify what you want to add to the moderation database");
+                client.SendMessage(message.Channel, "Please specify what you want to add to the moderation database");
                 return;
             }
 
@@ -194,12 +194,12 @@ namespace CitiBot.Plugins.Moderation
         {
             if (message.UserType < TwitchUserTypes.Mod)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
+                client.SendMessage(message.Channel, "Sorry {0}, this command is only for mods and above.", message.SenderDisplayName);
                 return;
             }
             if (message.IsWhisper)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
+                //ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry by that command is not supported over whisper");
                 return;
             }
 

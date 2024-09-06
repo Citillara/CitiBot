@@ -2,6 +2,7 @@
 using CitiBot.Main;
 using CitiBot.Main.Models;
 using CitiBot.Plugins.Twitch.Models;
+using MySql.Data.MySqlClient.Memcached;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -80,6 +81,9 @@ namespace CitiBot.Plugins.GenericCommands
             pluginManager.RegisterCommand(
                 new PluginManager.OnMessageAction(this, DoFahrenheitToCelcius, "!ftoc", "!getc") { UserCooldown = 3 });
 
+            pluginManager.RegisterCommand(
+                new PluginManager.OnMessageAction(this, DoSelfUpdate, "!selfupdate")  { UserCooldown = 10 });
+
         }
 
         public void DoBug(TwitchClient sender, TwitchMessage message)
@@ -141,7 +145,7 @@ namespace CitiBot.Plugins.GenericCommands
         {
             if (message.UserType < TwitchUserTypes.Broadcaster)
             {
-                ApiHelper.CallWhisperApi(BotUsername, message.UserId, "Sorry {0}, but this command is rectricted to Broadcaster and above", message.SenderDisplayName);
+                sender.SendMessage(message.Channel, "Sorry {0}, but this command is rectricted to Broadcaster and above", message.SenderDisplayName);
             }
             else
             {
@@ -302,6 +306,11 @@ namespace CitiBot.Plugins.GenericCommands
             user.Save();
 
             sender.SendMessage(message.Channel, "{0} learned successfully", user.DisplayName);
+        }
+
+        public void DoSelfUpdate(TwitchClient sender, TwitchMessage message)
+        {
+            TwitchUser.GetOrCreateUser(message.UserId, message.SenderName, message.DisplayName);
         }
 
         public static readonly string ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";

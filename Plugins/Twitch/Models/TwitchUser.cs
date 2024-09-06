@@ -122,7 +122,7 @@ namespace CitiBot.Plugins.Twitch.Models
                 doSave = true;
                 Name = username;
             }
-            if (!string.IsNullOrEmpty(displayName) && !BusinessDisplayName.Equals(displayName))
+            if (!string.IsNullOrEmpty(displayName) && (displayName == null || !DisplayName.Equals(displayName)))
             {
                 doSave = true;
                 DisplayName = displayName;
